@@ -2,6 +2,7 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
 <html lang="${pageContext.response.locale}">
 <head>
@@ -401,7 +402,7 @@
                                             </c:when>
                                         </c:choose>
                                     </td>
-                                    <td>${job.createdAt}</td>
+                                    <td>${fn:substring(job.createdAt.toString(), 0, 16)}</td>
                                     <td>
                                         <a href="/job/${job.id}" class="btn-view">
                                             <i class="bi bi-eye"></i> <spring:message code="history.view"/>

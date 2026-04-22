@@ -87,7 +87,7 @@ public class JobController {
         }
 
         response.setContentType("audio/wav");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + stemType + ".wav\"");
+        response.setHeader("Content-Disposition", "inline; filename=\"" + stemType + ".wav\"");
         response.setContentLength((int) file.length());
 
         try (FileInputStream fis = new FileInputStream(file);
