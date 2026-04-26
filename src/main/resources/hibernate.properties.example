@@ -1,0 +1,36 @@
+# =====================================================================
+# Hibernate Konfigürasyonu — BM470 Ders Formatı
+# =====================================================================
+# UYARI: Bu dosya .gitignore'da. Şifre asla repo'ya commit edilmez.
+# Lokal geliştirme için bastion tunnel açıkken host=127.0.0.1.
+# Sunucu deploy'unda host private IP (10.0.1.212) yapılır.
+# =====================================================================
+
+# ----- MySQL Bağlantısı (Oracle Cloud HeatWave) -----
+mysql.driver=com.mysql.cj.jdbc.Driver
+mysql.url=jdbc:mysql://127.0.0.1:3306/stemsep_db?characterEncoding=utf-8&useSSL=true&serverTimezone=UTC
+mysql.user=admin
+mysql.password=YOUR_PASSWORD_HERE
+
+# ----- Hibernate Ayarları -----
+hibernate.show_sql=true
+hibernate.format_sql=true
+hibernate.hbm2ddl.auto=update
+hibernate.dialect=org.hibernate.dialect.MySQLDialect
+hibernate.default_schema=stemsep_db
+
+# ----- c3p0 Bağlantı Havuzu (ders7-8-9.md §7.5) -----
+hibernate.c3p0.min_size=5
+hibernate.c3p0.max_size=20
+hibernate.c3p0.initialPoolSize=5
+hibernate.c3p0.acquire_increment=1
+hibernate.c3p0.timeout=1800
+hibernate.c3p0.max_statements=150
+hibernate.c3p0.idle_test_period=60
+hibernate.c3p0.acquireRetryAttempts=1
+hibernate.c3p0.acquireRetryDelay=250
+
+# ----- Uygulama Ayarları -----
+upload.directory=uploads
+stems.directory=stems
+colab.api.url=http://localhost:5000

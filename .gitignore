@@ -46,3 +46,11 @@ test-stems/
 
 # Logs
 logs/
+
+# Hibernate config (DB şifresi içerir — repo'ya commit edilmez)
+src/main/resources/hibernate.properties
+
+# SSH/credentials
+*.pem
+*.key
+.my.cnf

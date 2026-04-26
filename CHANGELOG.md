@@ -88,13 +88,57 @@
 
 ---
 
+## [0.4.0] — 2026-04-26 — Ders Kurallarına Hizalama + Oracle Cloud MySQL Bağlantısı
+
+### 🟢 Eklenenler
+- **`docs/guidelines/`** — Tüm proje yönerge yapısı:
+  - `README.md`, `INTEGRATION_GUIDELINES.md`, `PROJECT_ARCHITECTURE.md`, `CODING_STANDARDS.md`, `DEPLOYMENT_GUIDE.md`
+  - `courses/` altında `ders7-8-9.md` (1923 satır) ve `ders_kod_referansi.md` (1006 satır) BM470 ders dökümanları entegre edildi
+- **`CLAUDE.md`** — Claude Code için proje çalışma talimatları (her yeni konuşmada otomatik yüklenir)
+- **`hibernate.properties`** + **`hibernate.properties.example`** — ders §7.7 kalıbına uygun config (gitignored, şifre içerir)
+- **`OracleMySQLConnectionTest`** (`src/test/java/com/stemsep/integration/`) — Spring context + Hibernate SessionFactory + Oracle Cloud MySQL canlı bağlantı testi (3/3 PASS)
+- **Oracle Cloud MySQL HeatWave 9.6.1** — `stemsep_db` şeması (utf8mb4), `admin@%` user, bastion SSH tunnel ile lokal erişim
+- **SSH key altyapısı** — `~/.ssh/oracle_key` ed25519, `~/.ssh/config`, `~/.my.cnf` (mysql-client)
+- **Lombok 1.18.42** dependency (provided scope, ders §7.10)
+
+### 🟡 Değiştirilenler
+- **pom.xml**:
+  - JDK 21 → **17** (LTS, ders 18'in EOL alternatifi)
+  - Hibernate 6.1.7 → **5.6.15.Final-jakarta** (Spring 6 jakarta uyumlu, ders 5.x kuralı)
+  - `hibernate-core` → `hibernate-core-jakarta` artifactId
+  - Servlet API 6.0.0 → 6.1.0 (ders versiyonu)
+  - Spring 6.0.4 (değişmedi — bağlayıcı)
+- **`HibernateConfig.java`** — Ders §7.7 kalıbına yeniden yazıldı:
+  - `AvailableSettings.*` static import ile property anahtarları
+  - `LocalSessionFactoryBean` + `HibernateTransactionManager`
+  - Tüm c3p0 parametreleri ders şablonuna uygun
+- **`AppConfig.java`** — `@PropertySource(value="classpath:hibernate.properties", encoding="UTF-8")`
+- **`WebConfig.java`** — Locale `Locale("tr","TR")` (i18n format)
+- **Messages dosyaları**: `messages_tr.properties` → `messages_tr_TR.properties` (locale formatı)
+- **`.gitignore`** — `hibernate.properties`, `*.pem`, `*.key`, `.my.cnf` eklendi (kimlik bilgileri korunsun)
+
+### 🔴 Kaldırılanlar
+- **H2 database dependency** — ders MySQL zorunlu kılıyor
+- **`application.properties`** — Spring Boot stili, ders kuralına aykırı (`hibernate.properties` ile değiştirildi)
+- **`hibernate-c3p0-jakarta`** girişimi (artifact yok, `hibernate-c3p0` yeterli)
+
+### 📝 Notlar
+- **Ders versiyon çelişkisi çözüldü**: Hoca "Hibernate 5.3.20" diyor ama Spring 6 jakarta zorunluluğuyla compile etmiyor → "Spirit" yorumla 5.6.15-jakarta seçildi (ders kuralı korundu, gerçeklikle uyumlu)
+- **Paket migrasyonu yapılmadı**: Kullanıcı `com.stemsep` paketini koruma kararı aldı; ders öneri olan `tr.edu.duzce.mf.bm.bm470` projeye özel olduğu için bağlayıcı sayılmadı
+- **MySQL bağlantı altyapısı**: Bastion 3 saatte expire — yeni session her seferinde Console'dan açılır
+- **Build komutu**: `JAVA_HOME=/Library/Java/JavaVirtualMachines/amazon-corretto-17.jdk/Contents/Home mvn clean compile`
+
+---
+
 ## [Sonraki] — Planlanıyor
 
-### 📋 Faz 2: Arayüz İyileştirmeleri
-- [ ] Tomcat ile lokal deploy & test
-- [ ] JSP view'ların uçtan uca testi (uploaders → processing → result)
+### 📋 Faz 2.1: Tomcat End-to-End Test
+- [ ] `mvn cargo:run` ile lokal Tomcat deploy
+- [ ] JSP view'ların uçtan uca testi (Oracle MySQL ile)
 - [ ] Stem indirme & ZIP export testi
 
 ### 📋 Faz 3: Sunucu & GPU Bağlantısı
-- [ ] Oracle Cloud GPU sunucu entegrasyonu
-- [ ] Ngrok tunnel yapılandırması
+- [ ] Oracle Cloud Compute VM (Java backend)
+- [ ] Oracle Cloud GPU instance (Demucs Flask)
+- [ ] systemd service tanımı (`docs/guidelines/DEPLOYMENT_GUIDE.md` §3)
+- [ ] WAR'ı production'a taşıma + `hibernate.properties` private IP'ye çevrim

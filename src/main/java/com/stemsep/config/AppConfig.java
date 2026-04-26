@@ -10,6 +10,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @ComponentScan(basePackages = "com.stemsep")
 @EnableTransactionManagement
 @EnableAsync
-@PropertySource("classpath:application.properties")
+@PropertySource(value = "classpath:hibernate.properties", encoding = "UTF-8")
 public class AppConfig {
 }

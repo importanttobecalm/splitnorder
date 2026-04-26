@@ -13,17 +13,23 @@
     <description>AI Music Stem Separation Platform - BM470</description>
 
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>17</java.version>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Ders bağlayıcı versiyonlar -->
         <spring.version>6.0.4</spring.version>
-        <hibernate.version>6.1.7.Final</hibernate.version>
+        <hibernate.version>5.6.15.Final</hibernate.version>
+        <c3p0.version>0.9.5.2</c3p0.version>
+        <mysql.driver.version>8.0.28</mysql.driver.version>
         <slf4j.version>1.7.25</slf4j.version>
+        <log4j.version>1.2.14</log4j.version>
+        <junit.version>4.13.1</junit.version>
+        <lombok.version>1.18.42</lombok.version>
     </properties>
 
     <dependencies>
-        <!-- Spring MVC -->
+        <!-- Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
@@ -40,14 +46,14 @@
             <version>${spring.version}</version>
         </dependency>
 
-        <!-- Hibernate ORM (Jakarta compatible) -->
+        <!-- Hibernate 5.6.15 jakarta variant (Spring 6 ile uyumlu, javax değil jakarta.persistence) -->
         <dependency>
-            <groupId>org.hibernate.orm</groupId>
-            <artifactId>hibernate-core</artifactId>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core-jakarta</artifactId>
             <version>${hibernate.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.hibernate.orm</groupId>
+            <groupId>org.hibernate</groupId>
             <artifactId>hibernate-c3p0</artifactId>
             <version>${hibernate.version}</version>
         </dependency>
@@ -56,22 +62,17 @@
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
-            <version>0.9.5.2</version>
+            <version>${c3p0.version}</version>
         </dependency>
 
-        <!-- MySQL Connector -->
+        <!-- MySQL Connector (ders: 8.0.28) -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.28</version>
+            <version>${mysql.driver.version}</version>
         </dependency>
 
-        <!-- Logging: log4j 1.2.14 + slf4j 1.7.25 -->
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.14</version>
-        </dependency>
+        <!-- Loglama: slf4j 1.7.25 + log4j 1.2.14 (log4j 2.x DEĞİL) -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -82,33 +83,34 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
 
-        <!-- Jakarta Servlet API (provided by Tomcat 10.1.8) -->
+        <!-- Jakarta Servlet & JSP & JSTL (Tomcat 10+ için jakarta) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.0.0</version>
+            <version>6.1.0</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- JSP API -->
         <dependency>
             <groupId>jakarta.servlet.jsp</groupId>
             <artifactId>jakarta.servlet.jsp-api</artifactId>
             <version>3.1.0</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- JSTL -->
-        <dependency>
-            <groupId>org.glassfish.web</groupId>
-            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
-            <version>3.0.1</version>
-        </dependency>
         <dependency>
             <groupId>jakarta.servlet.jsp.jstl</groupId>
             <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
             <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>3.0.1</version>
         </dependency>
 
         <!-- Jackson JSON -->
@@ -118,18 +120,19 @@
             <version>2.15.2</version>
         </dependency>
 
-        <!-- H2 for development/testing -->
+        <!-- Lombok (provided) -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>2.1.214</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
         </dependency>
 
-        <!-- JUnit 4.13.1 -->
+        <!-- JUnit 4.13.1 (ders: JUnit 5 değil) -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -154,8 +157,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
             <plugin>
