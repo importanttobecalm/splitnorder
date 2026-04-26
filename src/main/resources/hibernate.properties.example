@@ -7,6 +7,8 @@
 # =====================================================================
 
 # ----- MySQL Bağlantısı (Oracle Cloud HeatWave) -----
+# Lokal: bastion tunnel açıkken host=127.0.0.1
+# Sunucu: -Dmysql.url=jdbc:mysql://10.0.1.212:3306/... ile JVM startup'ta override
 mysql.driver=com.mysql.cj.jdbc.Driver
 mysql.url=jdbc:mysql://127.0.0.1:3306/stemsep_db?characterEncoding=utf-8&useSSL=true&serverTimezone=UTC
 mysql.user=admin

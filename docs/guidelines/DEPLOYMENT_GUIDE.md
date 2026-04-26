@@ -29,14 +29,25 @@ INFO  Initializing Spring DispatcherServlet 'DispatcherServlet'
 INFO  Tomcat started on port(s): 8080
 ```
 
-## 2. Java Backend → Tomcat (Oracle Compute VM)
+## 2. Java Backend → Tomcat (Oracle Compute VM — **FREE Tier**)
+
+> Bu kısım Oracle Always Free tier'a sığar — para harcanmaz.
 
 ### Compute Instance Gereksinimleri
-- **Shape**: VM.Standard.E4.Flex (2 OCPU, 8 GB RAM yeterli — Free Tier'a sığar)
-- **OS**: Oracle Linux 8 veya Ubuntu 22.04
-- **Subnet**: VCN içinde, MySQL HeatWave ile aynı (10.0.x.0/24)
-- **Public IP**: Yes (web traffic için)
-- **Disk**: En az 50 GB
+- **Shape**: `VM.Standard.A1.Flex` (ARM Ampere) — **Always Free**: 4 OCPU + 24 GB RAM bedava
+  - Alternatif: `VM.Standard.E2.1.Micro` (AMD x86, 1/8 OCPU) — daha kısıtlı ama AMD uyumluluğu için
+- **OS**: **Oracle Linux 8** (önerilen, RPM tabanlı, dnf kolay) veya Ubuntu 22.04
+- **Subnet**: `stemsep-vcn` içinde, MySQL HeatWave ile **aynı VCN** (private → MySQL'e direkt erişim)
+- **Public IP**: Yes (web traffic için 8080)
+- **SSH key**: Mevcut `~/.ssh/oracle_key.pub` (zaten yüklü bastion'a, aynı key)
+- **Disk**: 50 GB yeterli (Always Free 200 GB block storage hakkı)
+
+### Security List Kuralları (`stemsep-vcn` default Security List'ine ekle)
+| Yön | Port | Kaynak | Amaç |
+|-----|------|--------|------|
+| Ingress | 22 | Kendi public IP/32 | SSH |
+| Ingress | 8080 | 0.0.0.0/0 | HTTP web (test için; production'da nginx + 443) |
+| Ingress | 3306 | 10.0.0.0/16 | MySQL (zaten açık) |
 
 ### Security List Kuralları
 | Yön | Port | Kaynak | Amaç |
@@ -45,36 +56,94 @@ INFO  Tomcat started on port(s): 8080
 | Ingress | 8080 (veya 80/443) | 0.0.0.0/0 | HTTP web |
 | Egress | 3306 | 10.0.0.0/16 (VCN) | MySQL |
 
-### VM Kurulum
+### VM Kurulum (Tek Seferlik)
+
+`deploy/README.md` dosyasında **adım adım komutlar** var. Özet:
+
+1. **VM oluştur** (Oracle Console → Compute → Create instance)
+2. **SSH** ile bağlan: `ssh -i ~/.ssh/oracle_key opc@<VM_PUBLIC_IP>`
+3. **Java 17 + Tomcat 10** kur (Oracle Linux için `sudo dnf install -y java-17-openjdk` + Tomcat tar.gz)
+4. **`tomcat` user** + `/opt/tomcat10` dizini
+5. `deploy/secrets.env.example` → `/etc/stemsep/secrets.env` (chmod 600, şifre gir)
+6. `deploy/tomcat-stemsep.service` → `/etc/systemd/system/`
+7. `sudo systemctl enable --now tomcat-stemsep`
+8. Firewall: `sudo firewall-cmd --add-port=8080/tcp --permanent && sudo firewall-cmd --reload`
+
+### Yeni Sürüm Yayınlama (Her Defasında)
+
+Lokal Mac'ten:
 ```bash
-# Bağlan
-ssh -i ~/.ssh/oracle_key opc@<VM_PUBLIC_IP>
-
-# Java 17 + Tomcat 10
-sudo dnf install -y java-17-openjdk
-wget https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.36/bin/apache-tomcat-10.1.36.tar.gz
-tar xzf apache-tomcat-10.1.36.tar.gz
-mv apache-tomcat-10.1.36 ~/tomcat10
-
-# WAR'ı upload et (Mac'ten)
-scp -i ~/.ssh/oracle_key target/stemsep.war opc@<VM_PUBLIC_IP>:~/tomcat10/webapps/
-
-# hibernate.properties'i upload et (gitignored, ayrı taşınmalı)
-scp -i ~/.ssh/oracle_key src/main/resources/hibernate.properties \
-    opc@<VM_PUBLIC_IP>:~/hibernate.properties.prod
-
-# Sunucuda: mysql.url'i private IP'ye çevir
-sed -i 's|jdbc:mysql://127.0.0.1|jdbc:mysql://10.0.1.212|' ~/hibernate.properties.prod
-mv ~/hibernate.properties.prod ~/tomcat10/lib/hibernate.properties
-
-# Başlat
-~/tomcat10/bin/catalina.sh start
-tail -f ~/tomcat10/logs/catalina.out
+mvn clean package -DskipTests
+./deploy/deploy.sh <VM_PUBLIC_IP> opc
 ```
+
+Bu script: WAR'ı scp ile yollar → systemd ile durdurup başlatır → log'u gösterir.
 
 URL: `http://<VM_PUBLIC_IP>:8080/stemsep/`
 
-## 3. Demucs Flask Service → Oracle Cloud GPU
+### URL Override Mantığı
+
+Repo'da `hibernate.properties` lokal için `127.0.0.1` (bastion tunnel ile dev). Sunucuda systemd unit'in `CATALINA_OPTS`'unda:
+```
+-Dmysql.url=jdbc:mysql://10.0.1.212:3306/stemsep_db?...
+```
+Spring Environment system property'leri @PropertySource'tan **yüksek öncelikte** okur — yani repo dosyası dokunulmuyor, sadece JVM startup arg'ı override ediyor. Aynı yöntemle `colab.api.url` de Colab/Modal/Oracle GPU URL'leri arasında değiştirilir.
+
+## 3. Demucs Flask Service — GPU Seçenekleri
+
+### Neden Önce Ücretsiz?
+
+Mevcut `ColabInferenceService` zaten **swap-friendly** tasarlandı: `colab.api.url` property'si ile GPU servisinin URL'i değişir. Yani önce Colab/Kaggle ile başlayıp sonra Oracle GPU veya Modal'a geçmek **tek satır config değişikliği**.
+
+### Karşılaştırma (Demucs için)
+
+| Platform | Ücretsiz GPU | Limit | Kurulum | Üretim Uygunluğu |
+|----------|--------------|-------|---------|------------------|
+| **Google Colab Free** | T4 16GB | ~12h/gün, kesintili | 5 dk (notebook + ngrok) | Demo/test |
+| **Kaggle Notebooks** | T4×2 / P100 | 30 saat/hafta | 10 dk | Demo/sunum |
+| **Modal.com** | A10 (1$ free credit/ay) | ~$0.60/h | Python decorator | ✅ Üretim |
+| **Lightning AI** | T4 | 22 saat/ay | Studio interface | Sunum |
+| **Oracle GPU** (`VM.GPU.A10.1`) | ❌ Ücretsiz YOK | $300 trial credit | systemd setup (§3 altı) | ✅ Üretim |
+
+### Önerilen Yol
+
+1. **İlk demo / proje sunumu**: Google Colab notebook + ngrok tunnel (FREE)
+2. **Ödev gönderim öncesi gerçek test**: Oracle GPU $300 trial (~100 saat A10)
+3. **Hocaya canlı demo**: Colab veya Modal — her zaman ayakta
+
+### Colab Notebook Şablonu (5 Dakikalık Setup)
+
+Colab'da yeni notebook → şu hücreyi çalıştır:
+
+```python
+!pip install -q demucs flask pyngrok
+!ngrok authtoken YOUR_NGROK_TOKEN  # ngrok.com'dan ücretsiz
+
+# demucs-server/app.py'i upload et veya içeri yapıştır
+%%writefile app.py
+# ... (mevcut app.py içeriği)
+
+from threading import Thread
+from pyngrok import ngrok
+
+def run_flask():
+    import app
+    app.app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+
+Thread(target=run_flask, daemon=True).start()
+public_url = ngrok.connect(5000).public_url
+print(f"🌐 Public URL: {public_url}")
+```
+
+Sonra Java backend tarafında (lokal veya sunucu):
+```bash
+# Çalışırken JVM args ile override
+-Dcolab.api.url=https://abc-123-456.ngrok-free.app
+```
+
+Veya sunucuda systemd unit'in `CATALINA_OPTS` satırında değiştir + `sudo systemctl restart tomcat-stemsep`.
+
+### Oracle Cloud GPU (Üretim İçin — $300 Trial Sonrası Karar)
 
 ### GPU Instance Gereksinimleri
 - **Shape**: `VM.GPU.A10.1` (1× A10, 24GB GPU) — istek sonrası onay

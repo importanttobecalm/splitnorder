@@ -1,0 +1,38 @@
+[Unit]
+Description=Apache Tomcat 10 — splitnorder/stemsep WAR
+After=network.target
+
+[Service]
+Type=forking
+
+# Kullanıcı (VM'de tomcat user oluşturduysan; yoksa opc/ubuntu kullan)
+User=tomcat
+Group=tomcat
+
+# Java 17
+Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk"
+
+# Tomcat konumları
+Environment="CATALINA_PID=/opt/tomcat10/temp/tomcat.pid"
+Environment="CATALINA_HOME=/opt/tomcat10"
+Environment="CATALINA_BASE=/opt/tomcat10"
+
+# JVM + Spring Environment override (sunucuda private MySQL IP)
+# CATALINA_OPTS Tomcat'in JVM args'ı; -D ile Spring property override
+Environment="CATALINA_OPTS=-Xms512m -Xmx2048m \
+    -Dmysql.url=jdbc:mysql://10.0.1.212:3306/stemsep_db?characterEncoding=utf-8&useSSL=true&serverTimezone=UTC \
+    -Dmysql.user=admin \
+    -Dcolab.api.url=http://10.0.1.250:5000"
+
+# Şifre EnvironmentFile'dan (commit edilmez, sunucuda chmod 600)
+EnvironmentFile=/etc/stemsep/secrets.env
+
+ExecStart=/opt/tomcat10/bin/startup.sh
+ExecStop=/opt/tomcat10/bin/shutdown.sh
+
+# Crash restart
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
