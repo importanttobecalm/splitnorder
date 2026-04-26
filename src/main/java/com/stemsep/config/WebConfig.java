@@ -17,6 +17,9 @@ import java.util.Locale;
 
 @Configuration
 @EnableWebMvc
+@org.springframework.context.annotation.ComponentScan(
+    basePackages = "com.stemsep.controller"
+)
 public class WebConfig implements WebMvcConfigurer {
 
     @Bean

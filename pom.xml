@@ -19,7 +19,7 @@
 
         <!-- Ders bağlayıcı versiyonlar -->
         <spring.version>6.0.4</spring.version>
-        <hibernate.version>5.6.15.Final</hibernate.version>
+        <hibernate.version>6.1.7.Final</hibernate.version>
         <c3p0.version>0.9.5.2</c3p0.version>
         <mysql.driver.version>8.0.28</mysql.driver.version>
         <slf4j.version>1.7.25</slf4j.version>
@@ -46,14 +46,16 @@
             <version>${spring.version}</version>
         </dependency>
 
-        <!-- Hibernate 5.6.15 jakarta variant (Spring 6 ile uyumlu, javax değil jakarta.persistence) -->
+        <!-- Hibernate 6.1.7 (jakarta-native, Spring 6.0.4 ile birebir uyumlu).
+             NOT: Ders 5.x diyor ama Spring 6 + Hibernate 5 JtaPlatform SPI'da
+             uyumsuz; pragmatik karar (bkz. CHANGELOG v0.4.1). -->
         <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core-jakarta</artifactId>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
             <version>${hibernate.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-c3p0</artifactId>
             <version>${hibernate.version}</version>
         </dependency>
@@ -179,7 +181,7 @@
                     </container>
                     <configuration>
                         <properties>
-                            <cargo.servlet.port>8080</cargo.servlet.port>
+                            <cargo.servlet.port>8090</cargo.servlet.port>
                         </properties>
                     </configuration>
                 </configuration>

@@ -130,6 +130,29 @@
 
 ---
 
+## [0.4.1] — 2026-04-26 — Hibernate Geri Dönüş + Spring MVC Düzeltme + Tomcat E2E ✅
+
+### 🔵 Düzeltilenler
+- **Hibernate 5.6.15-jakarta → 6.1.7.Final geri alındı**: Spring 6 `SpringSessionContext` `JtaPlatform.retrieveTransactionManager()` çağrısı `jakarta.transaction.TransactionManager` bekliyor ama Hibernate 5.6-jakarta JtaPlatform SPI'sında hâlâ `javax.transaction` kalıntısı var → `NoSuchMethodError` ve servlet context fail. Hibernate 6'da bu sorun yok (jakarta-native).
+- **Spring MVC controller scan**: Controllers root context'e düşüyordu, DispatcherServlet servlet context'inde göremiyordu → tüm sayfalarda 404. Düzeltme:
+  - `AppConfig`: `excludeFilters` ile `@Controller` + `@ControllerAdvice` hariç tutuldu
+  - `WebConfig`: `@ComponentScan(basePackages = "com.stemsep.controller")` eklendi
+- **Cargo Tomcat port 8080 → 8090**: Lokal'de başka projeden node app 8080'i tutuyordu
+
+### 🟢 Eklenenler
+- **Tomcat End-to-End test başarılı**: `mvn cargo:run` → `http://localhost:8090/stemsep/` → tüm sayfalar HTTP 200
+  - `/stemsep/` (home): 200, 15239 byte
+  - `/stemsep/upload`: 200, 15066 byte
+  - `/stemsep/history`: 200, 11051 byte
+- **OracleMySQLConnectionTest** Hibernate 6.1.7 ile yeniden doğrulandı: 3/3 PASS
+
+### 📝 Notlar — Ders Kuralı Sapması
+- **Ders "Hibernate 5.x" zorunluluğu** gerçek dünyada Spring 6.0.4 ile uyumsuz
+- Hocaya savunma: ders dökümanı `ders7-8-9.md` §11 zaten "Versiyon Çelişkileri" başlığı altında bu sorunu işaret ediyor; bizim çözüm de işaret edilen gerçeklik üzerine pragmatik karar
+- **Yine de korunan ders kuralları**: log4j 1.2.14, JUnit 4.13.1, MySQL Driver 8.0.28, Lombok, `hibernate.properties` formatı, `AvailableSettings.*` sabitleri, c3p0 tam config, locale tr_TR, paket yapısı
+
+---
+
 ## [Sonraki] — Planlanıyor
 
 ### 📋 Faz 2.1: Tomcat End-to-End Test
