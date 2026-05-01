@@ -1,0 +1,9 @@
+- [Proje Durumu](project_status.md) — Nerede kalındı, sıradaki işler
+- [Changelog](changelog.md) — Anlamlı değişiklikler (en yeni üstte)
+- [Kararlar](decisions.md) — Mimari/teknik kararlar
+- [Gotchas](gotchas.md) — Tekrar edilmemesi gereken hatalar
+- [Kullanıcı Profili](user_profile.md) — Çalışma tarzı ve tercihler
+- [Ders Kuralları](project_course_rules.md) — BM470 sıkı kuralları
+- [Tech Stack](project_tech_stack.md) — Versiyonlar ve mimari özet
+- [NotebookLM MCP](reference_notebooklm.md) — Ders PDF'lerine sorgu erişimi (alias: bm470)
+- 🔒 [NotebookLM-First Kuralı](feedback_notebooklm_first.md) — Kod yazmadan ÖNCE bm470 sorgula (ZORUNLU)

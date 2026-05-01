@@ -55,6 +55,7 @@ src/main/resources/hibernate.properties
 *.key
 .my.cnf
 
-# Claude Code memory (kullanıcıya özel, repo'ya commit edilmez)
-memory/
+# Claude Code memory — sadece kullanıcıya özel dosyalar hariç tutulur.
+# Proje durum/karar/log dosyaları repo'ya dahil ki klonlayan ekip ortak hafıza kullanabilsin.
+memory/user_*.md
 

@@ -5,10 +5,19 @@
 
 ## ⚠️ ÖNCELİKLİ OKUMA (Her Konuşmada)
 
-1. **`memory/MEMORY.md`** — son oturum durumu + feedback kuralları
-2. **`memory/feedback_notebooklm_first.md`** — NotebookLM-First kuralı (kod yazmadan önce `bm470` sorgula)
-3. **Bu dosyanın "Karar Özetleri" tablosu** (aşağıda) — ne neden böyle yapılmış, tek bakışta gör
-4. Konuya göre ilgili karar dosyası: [`docs/decisions/`](docs/decisions/README.md)
+Sıralı, hepsi kısa — toplam ~5 dakikalık warm-up:
+
+1. [`memory/MEMORY.md`](memory/MEMORY.md) — index (diğer memory dosyalarına yönlendirir)
+2. [`memory/project_status.md`](memory/project_status.md) — nerede kalındı, sıradaki işler
+3. [`memory/changelog.md`](memory/changelog.md) — son anlamlı değişiklikler (en yeni üstte)
+4. [`memory/gotchas.md`](memory/gotchas.md) — bu projede tekrar edilmemesi gereken hatalar
+5. [`memory/feedback_notebooklm_first.md`](memory/feedback_notebooklm_first.md) — **kural:** kod yazmadan önce NotebookLM `bm470` sorgula
+6. **Bu dosyanın "Karar Özetleri" tablosu** (aşağıda) — ne neden böyle yapılmış, tek bakışta
+7. Konuya göre ilgili ADR: [`docs/decisions/`](docs/decisions/README.md)
+
+> İhtiyaç oldukça: `memory/decisions.md`, `memory/project_tech_stack.md`, `memory/project_course_rules.md`, `memory/reference_notebooklm.md`.
+>
+> `memory/user_*.md` git'e dahil değil (kullanıcıya özel); klonlayan kişi kendi dosyalarını oluşturur.
 
 ## 🧭 Karar Özetleri (Her bir başlık tek satır — detay için ilgili .md)
 
