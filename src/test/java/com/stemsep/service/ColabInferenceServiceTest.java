@@ -4,14 +4,14 @@ import com.stemsep.dao.JobDao;
 import com.stemsep.dao.StemDao;
 import com.stemsep.model.Job;
 import com.stemsep.model.JobStatus;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class ColabInferenceServiceTest {
@@ -25,7 +25,7 @@ public class ColabInferenceServiceTest {
     @InjectMocks
     private ColabInferenceService colabService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(colabService, "colabApiUrl", "http://localhost:5000");
@@ -45,7 +45,6 @@ public class ColabInferenceServiceTest {
 
         colabService.processJob(1L);
 
-        // Job should have been set to PROCESSING at some point
         verify(jobDao, atLeastOnce()).update(job);
     }
 
@@ -71,7 +70,6 @@ public class ColabInferenceServiceTest {
 
         colabService.processJob(2L);
 
-        // In mock mode (no Colab running), job should still complete
         assertTrue(
             job.getStatus() == JobStatus.COMPLETED || job.getStatus() == JobStatus.FAILED
         );

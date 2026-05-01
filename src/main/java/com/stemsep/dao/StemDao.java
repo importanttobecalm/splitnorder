@@ -1,8 +1,13 @@
 package com.stemsep.dao;
 
 import com.stemsep.model.Stem;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -27,18 +32,30 @@ public class StemDao {
     }
 
     public List<Stem> findByJobId(Long jobId) {
-        return getCurrentSession()
-                .createQuery("FROM Stem s WHERE s.job.id = :jobId", Stem.class)
-                .setParameter("jobId", jobId)
-                .getResultList();
+        Session session = getCurrentSession();
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<Stem> criteriaQuery = criteriaBuilder.createQuery(Stem.class);
+        Root<Stem> root = criteriaQuery.from(Stem.class);
+
+        Predicate predicateJobId = criteriaBuilder.equal(root.get("job").get("id"), jobId);
+        criteriaQuery.select(root).where(predicateJobId);
+
+        Query<Stem> query = session.createQuery(criteriaQuery);
+        return query.getResultList();
     }
 
     public Stem findByJobIdAndType(Long jobId, String stemType) {
-        List<Stem> results = getCurrentSession()
-                .createQuery("FROM Stem s WHERE s.job.id = :jobId AND s.stemType = :type", Stem.class)
-                .setParameter("jobId", jobId)
-                .setParameter("type", stemType)
-                .getResultList();
+        Session session = getCurrentSession();
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<Stem> criteriaQuery = criteriaBuilder.createQuery(Stem.class);
+        Root<Stem> root = criteriaQuery.from(Stem.class);
+
+        Predicate predicateJobId = criteriaBuilder.equal(root.get("job").get("id"), jobId);
+        Predicate predicateStemType = criteriaBuilder.equal(root.get("stemType"), stemType);
+        criteriaQuery.select(root).where(criteriaBuilder.and(predicateJobId, predicateStemType));
+
+        Query<Stem> query = session.createQuery(criteriaQuery);
+        List<Stem> results = query.getResultList();
         return results.isEmpty() ? null : results.get(0);
     }
 }

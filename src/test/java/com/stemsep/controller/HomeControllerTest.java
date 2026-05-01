@@ -1,7 +1,7 @@
 package com.stemsep.controller;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -12,7 +12,7 @@ public class HomeControllerTest {
 
     private MockMvc mockMvc;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         HomeController controller = new HomeController();
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();

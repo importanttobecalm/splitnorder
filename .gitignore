@@ -54,3 +54,7 @@ src/main/resources/hibernate.properties
 *.pem
 *.key
 .my.cnf
+
+# Claude Code memory (kullanıcıya özel, repo'ya commit edilmez)
+memory/
+

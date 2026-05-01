@@ -1,8 +1,14 @@
 package com.stemsep.dao;
 
 import com.stemsep.model.Job;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -31,16 +37,30 @@ public class JobDao {
     }
 
     public List<Job> findBySessionId(String sessionId) {
-        return getCurrentSession()
-                .createQuery("FROM Job j WHERE j.sessionId = :sid ORDER BY j.createdAt DESC", Job.class)
-                .setParameter("sid", sessionId)
-                .getResultList();
+        Session session = getCurrentSession();
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<Job> criteriaQuery = criteriaBuilder.createQuery(Job.class);
+        Root<Job> root = criteriaQuery.from(Job.class);
+
+        Predicate predicateSessionId = criteriaBuilder.equal(root.get("sessionId"), sessionId);
+        Order orderByCreatedAtDesc = criteriaBuilder.desc(root.get("createdAt"));
+        criteriaQuery.select(root).where(predicateSessionId).orderBy(orderByCreatedAtDesc);
+
+        Query<Job> query = session.createQuery(criteriaQuery);
+        return query.getResultList();
     }
 
     public List<Job> findAll() {
-        return getCurrentSession()
-                .createQuery("FROM Job j ORDER BY j.createdAt DESC", Job.class)
-                .getResultList();
+        Session session = getCurrentSession();
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<Job> criteriaQuery = criteriaBuilder.createQuery(Job.class);
+        Root<Job> root = criteriaQuery.from(Job.class);
+
+        Order orderByCreatedAtDesc = criteriaBuilder.desc(root.get("createdAt"));
+        criteriaQuery.select(root).orderBy(orderByCreatedAtDesc);
+
+        Query<Job> query = session.createQuery(criteriaQuery);
+        return query.getResultList();
     }
 
     public void delete(Job job) {

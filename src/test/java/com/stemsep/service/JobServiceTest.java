@@ -3,17 +3,13 @@ package com.stemsep.service;
 import com.stemsep.dao.JobDao;
 import com.stemsep.model.Job;
 import com.stemsep.model.JobStatus;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class JobServiceTest {
@@ -27,7 +23,7 @@ public class JobServiceTest {
     @InjectMocks
     private JobService jobService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
     }
