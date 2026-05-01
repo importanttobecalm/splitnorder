@@ -1,8 +1,13 @@
 package com.stemsep.dao;
 
 import com.stemsep.model.User;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -27,18 +32,30 @@ public class UserDao {
     }
 
     public User findByUsername(String username) {
-        List<User> results = getCurrentSession()
-                .createQuery("FROM User u WHERE u.username = :username", User.class)
-                .setParameter("username", username)
-                .getResultList();
+        Session session = getCurrentSession();
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
+        Root<User> root = criteriaQuery.from(User.class);
+
+        Predicate predicateUsername = criteriaBuilder.equal(root.get("username"), username);
+        criteriaQuery.select(root).where(predicateUsername);
+
+        Query<User> query = session.createQuery(criteriaQuery);
+        List<User> results = query.getResultList();
         return results.isEmpty() ? null : results.get(0);
     }
 
     public User findByEmail(String email) {
-        List<User> results = getCurrentSession()
-                .createQuery("FROM User u WHERE u.email = :email", User.class)
-                .setParameter("email", email)
-                .getResultList();
+        Session session = getCurrentSession();
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
+        Root<User> root = criteriaQuery.from(User.class);
+
+        Predicate predicateEmail = criteriaBuilder.equal(root.get("email"), email);
+        criteriaQuery.select(root).where(predicateEmail);
+
+        Query<User> query = session.createQuery(criteriaQuery);
+        List<User> results = query.getResultList();
         return results.isEmpty() ? null : results.get(0);
     }
 

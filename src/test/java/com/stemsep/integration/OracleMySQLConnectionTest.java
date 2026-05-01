@@ -3,23 +3,21 @@ package com.stemsep.integration;
 import com.stemsep.config.HibernateConfig;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Spring context + Hibernate SessionFactory + Oracle Cloud MySQL canlı bağlantı testi.
  * Çalıştırmadan önce: bastion SSH tunnel açık olmalı (localhost:3306 → 10.0.1.212:3306).
- *
- * Sadece persistence katmanını bootstrap eder (WebConfig'i hariç tutar — ServletContext istemesin diye).
  */
 public class OracleMySQLConnectionTest {
 
@@ -32,12 +30,12 @@ public class OracleMySQLConnectionTest {
 
     private static AnnotationConfigApplicationContext ctx;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         ctx = new AnnotationConfigApplicationContext(PersistenceOnlyConfig.class);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         if (ctx != null) ctx.close();
     }
@@ -45,8 +43,8 @@ public class OracleMySQLConnectionTest {
     @Test
     public void springContextStartsAndSessionFactoryIsAvailable() {
         SessionFactory sf = ctx.getBean(SessionFactory.class);
-        assertNotNull("SessionFactory bean Spring container'dan alınamadı", sf);
-        assertTrue("SessionFactory beklenmedik şekilde kapalı", !sf.isClosed());
+        assertNotNull(sf, "SessionFactory bean Spring container'dan alınamadı");
+        assertTrue(!sf.isClosed(), "SessionFactory beklenmedik şekilde kapalı");
     }
 
     @Test
@@ -60,10 +58,10 @@ public class OracleMySQLConnectionTest {
                     return rs.getString(1);
                 }
             });
-            assertNotNull("MySQL VERSION() null döndü", version);
+            assertNotNull(version, "MySQL VERSION() null döndü");
             System.out.println(">>> Bağlanılan MySQL versiyonu: " + version);
-            assertTrue("Beklenen MySQL 8/9 versiyonu değil: " + version,
-                    version.startsWith("8") || version.startsWith("9"));
+            assertTrue(version.startsWith("8") || version.startsWith("9"),
+                    "Beklenen MySQL 8/9 versiyonu değil: " + version);
         }
     }
 
@@ -85,7 +83,7 @@ public class OracleMySQLConnectionTest {
                 }
             });
             session.getTransaction().commit();
-            assertTrue("Yazma/okuma round-trip başarısız", "ok".equals(msg));
+            assertTrue("ok".equals(msg), "Yazma/okuma round-trip başarısız");
             System.out.println(">>> Yazma/okuma/silme round-trip OK");
         }
     }

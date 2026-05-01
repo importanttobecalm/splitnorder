@@ -5,46 +5,47 @@
 
 ## ⚠️ ÖNCELİKLİ OKUMA (Her Konuşmada)
 
-Kod yazmadan / öneri vermeden önce şu sırayla:
+1. **`memory/MEMORY.md`** — son oturum durumu + feedback kuralları
+2. **`memory/feedback_notebooklm_first.md`** — NotebookLM-First kuralı (kod yazmadan önce `bm470` sorgula)
+3. **Bu dosyanın "Karar Özetleri" tablosu** (aşağıda) — ne neden böyle yapılmış, tek bakışta gör
+4. Konuya göre ilgili karar dosyası: [`docs/decisions/`](docs/decisions/README.md)
 
-1. [docs/guidelines/README.md](docs/guidelines/README.md) — giriş, okuma sırası
-2. [docs/guidelines/INTEGRATION_GUIDELINES.md](docs/guidelines/INTEGRATION_GUIDELINES.md) — **SIKI KURALLAR tablosu (kullanma/kullan)**
-3. [docs/guidelines/PROJECT_ARCHITECTURE.md](docs/guidelines/PROJECT_ARCHITECTURE.md) — paket yapısı, 3 katmanlı şema
-4. Çalışılan konuya göre [docs/guidelines/courses/](docs/guidelines/courses/) altındaki ilgili ders dökümanı
+## 🧭 Karar Özetleri (Her bir başlık tek satır — detay için ilgili .md)
 
-## Çekirdek Kurallar (Ezber)
+> Her satır: **konu → karar → tek cümle gerekçe**. Tam gerekçe + slayt alıntısı için linkteki ADR dosyasını aç.
 
-- **Ders bağlayıcıdır**: Modern best-practice ile çakışınca ders kazanır
-- **Spring Boot YOK** — Saf Spring 6.0.4 + `WebApplicationInitializer`
-- **Hibernate 5.3.20** (6.x değil), **CriteriaBuilder** zorunlu (HQL/native opsiyonel)
-- **log4j 1.2.14** + slf4j 1.7.25 (log4j 2.x **yasak**)
-- **JUnit 4.13.1** (5 değil), **MySQL** (H2 değil), packaging: **war**
-- **Paket kökü**: `tr.edu.duzce.mf.bm.bm470` (mevcut `com.stemsep` ders teslimine uyumsuz)
-- **i18n**: TR + EN `messages_*.properties` zorunlu
-- **DI**: `@Autowired` field injection (constructor injection değil — derste böyle gösterildi)
+| # | Konu | Karar (özet) | Statü | Detay |
+|---|------|--------------|-------|-------|
+| 01 | **Paket kökü** | `com.stemsep` korunur (migrasyon iptal) — slaytlar zorunluluk koymuyor | ✅ | [01](docs/decisions/01-paket-adlandirma.md) |
+| 02 | **Hibernate sürümü** | 6.1.7 kalır — slaytlar 5.3.20 örnek ama zorunluluk değil | ✅ | [02](docs/decisions/02-hibernate-surum.md) |
+| 03 | **Spring** | 6.0.4 + saf annotation, **Boot yok** — proje gereksinimi `Spring MVC 6` | ✅ | [03](docs/decisions/03-spring-mvc-6.md) |
+| 04 | **Bootstrap** | `WebApplicationInitializer` + Java config, `web.xml` yok | ✅ | [04](docs/decisions/04-webapp-initializer.md) |
+| 05 | **Mimari** | Controller → Service → DAO → Hibernate Session, JpaRepository yasak | ✅ | [05](docs/decisions/05-katman-mimarisi.md) |
+| 06 | **DI tarzı** | `@Autowired` field injection (constructor değil) | ✅ | [06](docs/decisions/06-field-injection.md) |
+| 07 | **Sorgu API** | Tüm DAO'lar `CriteriaBuilder` (jakarta.persistence.criteria) ile, JPQL kalmadı | ✅ | [07](docs/decisions/07-criteria-builder.md) |
+| 08 | **JUnit** | JUnit 5 (Jupiter) 6.0.3 — slayt birebir; 4'ten geçiş yapıldı | ✅ | [08](docs/decisions/08-junit-surum.md) |
+| 09 | **log4j** | log4j 2.25.3 + slf4j-reload4j 2.0.17 — slayt birebir; 1.2.14'ten geçiş yapıldı | ✅ | [09](docs/decisions/09-log4j-surum.md) |
+| 10 | **i18n** | TR + EN `messages_*.properties`, TR zorunlu | ✅ | [10](docs/decisions/10-i18n-yapisi.md) |
+| 11 | **View** | JSP + JSTL (`/WEB-INF/views/`), `jakarta.tags.core` namespace | ✅ | [11](docs/decisions/11-jsp-jstl.md) |
+| 12 | **Interceptor** | `RequestLoggingInterceptor` cross-cutting log için (proje gereksinimi) | ✅ | [12](docs/decisions/12-interceptor.md) |
 
-## Yasak Yapılar
+**Statü:** ✅ Kabul / 🔧 Plan (yapılacak) / ❓ Belirsiz (kullanıcı onayı bekliyor)
 
-`@SpringBootApplication`, `@RestController`, `JpaRepository`, `CrudRepository`, log4j 2.x API'leri, JUnit 5, `application.properties` Boot stili, H2 in-memory.
+## Yasak Yapılar (Net)
 
-## Yeni Feature / Update Yaparken
+`@SpringBootApplication`, `spring-boot-starter-*`, `@RestController` (JSP döndürüyoruz), `JpaRepository`, `CrudRepository`, `application.properties` Boot stili, H2 in-memory, constructor injection.
 
-1. İlgili ders bölümünü `courses/` altından oku
-2. `INTEGRATION_GUIDELINES.md` "Sıkı Kurallar" tablosuyla çapraz kontrol
-3. Kod yaz (paket: `tr.edu.duzce.mf.bm.bm470.*`)
-4. `PROJECT_ARCHITECTURE.md` "Güncellemeler" satırına tarih düş
-5. Yeni kural çıktıysa `INTEGRATION_GUIDELINES.md`'ye ekle
-6. CHANGELOG.md güncelle
+## Yeni Feature / Update Akışı
 
-## Ders Dökümanları (courses/)
+1. **NotebookLM `bm470` sorgula** (kural: `feedback_notebooklm_first.md`)
+2. İlgili **ADR'ı aç** (yukarıdaki tablodan), karar/gerekçeyi gör
+3. Kod yaz — yasak yapıları kullanma
+4. Yeni karar gerektiyse `docs/decisions/` altına yeni `NN-konu.md` ekle + bu tablodaki listeye **bir satır** ekle
+5. Memory güncelle (`changelog.md` + gerekirse `decisions.md`)
 
-| Dosya | Kapsam |
-|-------|--------|
-| [ders7-8-9.md](docs/guidelines/courses/ders7-8-9.md) | Service & DAO + Criteria Query API + Loglama (1923 satır) |
-| [ders_kod_referansi.md](docs/guidelines/courses/ders_kod_referansi.md) | Kod referansı: pom.xml, WebAppInitializer, Controller, Interceptor, i18n, JSP, JUnit (1006 satır) |
+## Birincil Kaynak Hiyerarşisi
+1. **NotebookLM `bm470`** — ham PDF'ler (en güvenilir)
+2. **`docs/decisions/*.md`** — bu projeye özel kararlar (NotebookLM alıntılarıyla)
+3. `docs/guidelines/courses/*` — ders ham özetleri (yardımcı)
 
-**Eksik:** Ders 1-3 (`ilk3pdf.md`), Ders 4-5-6 ham özetleri.
-
-## Mevcut Proje Borçları
-
-`com.stemsep` paketi + Hibernate 6.1.7 + H2 — ders teslimine uyumsuz. Migrasyon planı `INTEGRATION_GUIDELINES.md` "Mevcut Proje ile Uyumsuzluklar" bölümünde.
+> Eski `INTEGRATION_GUIDELINES.md` ve `PROJECT_ARCHITECTURE.md` belgelerinin yerini bu ADR seti alıyor. Çelişki olursa **ADR doğrudur**.

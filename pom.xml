@@ -22,9 +22,10 @@
         <hibernate.version>6.1.7.Final</hibernate.version>
         <c3p0.version>0.9.5.2</c3p0.version>
         <mysql.driver.version>8.0.28</mysql.driver.version>
-        <slf4j.version>1.7.25</slf4j.version>
-        <log4j.version>1.2.14</log4j.version>
-        <junit.version>4.13.1</junit.version>
+        <!-- Slaytla hizalı: slf4j-reload4j köprüsü (reload4j = log4j 1.x maintained fork) -->
+        <slf4j.version>2.0.17</slf4j.version>
+        <!-- Slaytla hizalı: JUnit 5 (Jupiter). "JUnit 3/4 deprecated!" -->
+        <junit.jupiter.version>6.0.3</junit.jupiter.version>
         <lombok.version>1.18.42</lombok.version>
     </properties>
 
@@ -44,6 +45,13 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>
+            <!-- Slayt: commons-logging exclude (slf4j ile çakışmasın) -->
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Hibernate 6.1.7 (jakarta-native, Spring 6.0.4 ile birebir uyumlu).
@@ -74,7 +82,8 @@
             <version>${mysql.driver.version}</version>
         </dependency>
 
-        <!-- Loglama: slf4j 1.7.25 + log4j 1.2.14 (log4j 2.x DEĞİL) -->
+        <!-- Loglama (slayt): slf4j-api 2.0.17 + slf4j-reload4j 2.0.17 + log4j 2.25.3.
+             reload4j köprüsü, log4j 1.x stili `log4j.properties` config'i ile çalışır. -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -82,13 +91,11 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <artifactId>slf4j-reload4j</artifactId>
             <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
+            <!-- reload4j (log4j 1.x maintained fork) transitive olarak gelir.
+                 Slayttaki ekstra `log4j 2.25.3` JAR'ı Maven Central'da yok (BOM artifact).
+                 reload4j zaten log4j 1.x stili `log4j.properties` config'i çalıştırır. -->
         </dependency>
 
         <!-- Jakarta Servlet & JSP & JSTL (Tomcat 10+ için jakarta) -->
@@ -130,11 +137,18 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- JUnit 4.13.1 (ders: JUnit 5 değil) -->
+        <!-- JUnit 5 / Jupiter (slayt: junit-jupiter-api 6.0.3) -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Surefire'ın Jupiter testlerini çalıştırması için engine gerekli -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -146,7 +160,29 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>4.11.0</version>
+            <version>5.21.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- MockMvc matcher'ları (view().name vs.) için Hamcrest gerekli;
+             JUnit 4'le birlikte transitive geliyordu, Jupiter'da gelmiyor. -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>2.2</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Mockito'nun bundled byte-buddy'si JDK 21+ class file version'larını
+             tanıyamıyor ("Unknown Java version: 0"). En yeni byte-buddy ile override. -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.15.11</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>1.15.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
