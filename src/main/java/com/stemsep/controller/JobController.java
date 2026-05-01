@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -38,6 +39,12 @@ public class JobController {
         }
 
         model.addAttribute("job", job);
+
+        Map<String, String> stemUrls = new HashMap<>();
+        for (Stem s : job.getStems()) {
+            stemUrls.put(s.getStemType(), s.getDownloadUrl());
+        }
+        model.addAttribute("stemUrls", stemUrls);
 
         switch (job.getStatus()) {
             case PENDING:
@@ -114,18 +121,22 @@ public class JobController {
 
         try (ZipOutputStream zos = new ZipOutputStream(response.getOutputStream())) {
             for (Stem stem : job.getStems()) {
-                File file = new File(stem.getFilePath());
-                if (file.exists()) {
-                    zos.putNextEntry(new ZipEntry(stem.getStemType() + ".wav"));
-                    try (FileInputStream fis = new FileInputStream(file)) {
-                        byte[] buffer = new byte[8192];
-                        int bytesRead;
-                        while ((bytesRead = fis.read(buffer)) != -1) {
-                            zos.write(buffer, 0, bytesRead);
-                        }
-                    }
-                    zos.closeEntry();
+                String url = stem.getDownloadUrl();
+                if (url == null || !url.startsWith("http")) {
+                    logger.warn("Skipping stem {} for job {}: no remote URL", stem.getStemType(), id);
+                    continue;
                 }
+                zos.putNextEntry(new ZipEntry(stem.getStemType() + ".wav"));
+                try (InputStream is = new URL(url).openStream()) {
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = is.read(buffer)) != -1) {
+                        zos.write(buffer, 0, bytesRead);
+                    }
+                } catch (IOException e) {
+                    logger.error("Failed to fetch stem {} from {}: {}", stem.getStemType(), url, e.getMessage());
+                }
+                zos.closeEntry();
             }
         }
     }

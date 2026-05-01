@@ -354,10 +354,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.vocals"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/vocals" type="audio/wav">
+                        <source src="${stemUrls.vocals}" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/vocals" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${stemUrls.vocals}" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -368,10 +368,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.drums"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/drums" type="audio/wav">
+                        <source src="${stemUrls.drums}" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/drums" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${stemUrls.drums}" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -382,10 +382,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.bass"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/bass" type="audio/wav">
+                        <source src="${stemUrls.bass}" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/bass" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${stemUrls.bass}" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -396,10 +396,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.other"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/other" type="audio/wav">
+                        <source src="${stemUrls.other}" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/other" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${stemUrls.other}" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>

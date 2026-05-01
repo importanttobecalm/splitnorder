@@ -9,15 +9,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 
 /**
@@ -98,44 +105,44 @@ public class ColabInferenceService {
     }
 
     /**
-     * Flask API'ye POST /api/separate isteği gönder.
-     * Flask 202 Accepted döndürürse true, aksi halde false.
+     * Flask API'ye POST /api/separate isteği gönder (multipart upload).
+     * Ses dosyası bytes olarak yüklenir — Flask aynı disk üzerinde olmak zorunda değil.
      */
     private boolean sendSeparateRequest(Job job) {
+        File audioFile = new File(job.getOriginalFilePath());
+        if (!audioFile.exists()) {
+            logger.error("Audio file missing for job {}: {}", job.getId(), audioFile.getAbsolutePath());
+            return false;
+        }
+
         try {
-            URL url = new URL(colabApiUrl + "/api/separate");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(30000);
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(10000);
+            factory.setReadTimeout(120000);
+            RestTemplate rest = new RestTemplate(factory);
 
-            String jsonPayload = String.format(
-                "{\"file_path\":\"%s\",\"model\":\"%s\",\"job_id\":%d}",
-                job.getOriginalFilePath().replace("\\", "/"),
-                job.getModelUsed(),
-                job.getId()
-            );
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(jsonPayload.getBytes("UTF-8"));
-            }
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new FileSystemResource(audioFile));
+            body.add("model", job.getModelUsed());
+            body.add("job_id", String.valueOf(job.getId()));
 
-            int responseCode = conn.getResponseCode();
-            String responseBody = readResponse(conn);
+            HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
+            ResponseEntity<String> response = rest.postForEntity(
+                colabApiUrl + "/api/separate", request, String.class);
 
-            if (responseCode == 200 || responseCode == 202) {
-                logger.info("Demucs API accepted job {}: {}", job.getId(), responseBody);
+            int code = response.getStatusCode().value();
+            if (code == 200 || code == 202) {
+                logger.info("Demucs API accepted job {}: {}", job.getId(), response.getBody());
                 return true;
-            } else {
-                logger.error("Demucs API rejected job {} (HTTP {}): {}", job.getId(), responseCode, responseBody);
-                return false;
             }
+            logger.error("Demucs API rejected job {} (HTTP {}): {}", job.getId(), code, response.getBody());
+            return false;
 
-        } catch (IOException e) {
+        } catch (RestClientException e) {
             logger.warn("Demucs API not available, falling back to mock mode for job {}: {}", job.getId(), e.getMessage());
-            // Mock mode: Demucs API çalışmıyorsa simüle et
             return mockProcessing(job);
         }
     }
@@ -224,34 +231,25 @@ public class ColabInferenceService {
     }
 
     /**
-     * Stem dosyası kayıtlarını veritabanında oluştur.
-     * Flask API stem dosyalarını stems/{job_id}/ dizinine kaydeder.
+     * Stem kayıtlarını DB'de oluştur. Dosyalar Colab'da kalır;
+     * downloadUrl mutlak Colab URL'i olur — tarayıcı doğrudan oradan indirir.
      */
-    private void createStemRecords(Job job) throws IOException {
-        Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId()));
-        Files.createDirectories(stemsDir);
-
+    private void createStemRecords(Job job) {
         String[] stemTypes = {"vocals", "drums", "bass", "other"};
+        String base = colabApiUrl + "/api/stem/" + job.getId() + "/";
 
         for (String stemType : stemTypes) {
-            Path stemFile = stemsDir.resolve(stemType + ".wav");
-
             Stem stem = new Stem();
             stem.setJob(job);
             stem.setStemType(stemType);
-            stem.setFilePath(stemFile.toString());
-            stem.setFileSize(stemFile.toFile().exists() ? stemFile.toFile().length() : 0L);
-            stem.setDownloadUrl("/job/" + job.getId() + "/download/" + stemType);
+            stem.setFilePath(base + stemType);
+            stem.setFileSize(0L);
+            stem.setDownloadUrl(base + stemType);
 
             stemDao.save(stem);
             job.getStems().add(stem);
 
-            if (stemFile.toFile().exists()) {
-                logger.info("Stem record created: job={}, type={}, size={} bytes",
-                    job.getId(), stemType, stemFile.toFile().length());
-            } else {
-                logger.warn("Stem file not found on disk: {}", stemFile);
-            }
+            logger.info("Stem record created: job={}, type={}, url={}", job.getId(), stemType, stem.getDownloadUrl());
         }
     }
 }
