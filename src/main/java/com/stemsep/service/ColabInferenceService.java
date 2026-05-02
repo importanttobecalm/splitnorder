@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -110,15 +112,19 @@ public class ColabInferenceService {
      */
     private boolean sendSeparateRequest(Job job) {
         File audioFile = new File(job.getOriginalFilePath());
+        logger.info("[GPU-1] job={} → audioFile={}, exists={}, size={}",
+            job.getId(), audioFile.getAbsolutePath(), audioFile.exists(),
+            audioFile.exists() ? audioFile.length() : -1);
         if (!audioFile.exists()) {
-            logger.error("Audio file missing for job {}: {}", job.getId(), audioFile.getAbsolutePath());
+            logger.error("[GPU-FAIL] Audio file missing for job {}: {}", job.getId(), audioFile.getAbsolutePath());
             return false;
         }
 
+        long start = System.currentTimeMillis();
         try {
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
             factory.setConnectTimeout(10000);
-            factory.setReadTimeout(120000);
+            factory.setReadTimeout(300000);
             RestTemplate rest = new RestTemplate(factory);
 
             HttpHeaders headers = new HttpHeaders();
@@ -129,21 +135,39 @@ public class ColabInferenceService {
             body.add("model", job.getModelUsed());
             body.add("job_id", String.valueOf(job.getId()));
 
+            String url = colabApiUrl + "/api/separate";
+            logger.info("[GPU-2] POST multipart → {} (model={}, file={})", url, job.getModelUsed(), audioFile.getName());
+
             HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
-            ResponseEntity<String> response = rest.postForEntity(
-                colabApiUrl + "/api/separate", request, String.class);
+            ResponseEntity<String> response = rest.postForEntity(url, request, String.class);
 
             int code = response.getStatusCode().value();
+            long elapsed = System.currentTimeMillis() - start;
+            logger.info("[GPU-3] response in {}ms — HTTP {} → {}", elapsed, code, response.getBody());
             if (code == 200 || code == 202) {
-                logger.info("Demucs API accepted job {}: {}", job.getId(), response.getBody());
+                logger.info("[GPU-4] job {} accepted by GPU API", job.getId());
                 return true;
             }
-            logger.error("Demucs API rejected job {} (HTTP {}): {}", job.getId(), code, response.getBody());
+            logger.error("[GPU-FAIL] job {} rejected (HTTP {}): {}", job.getId(), code, response.getBody());
             return false;
 
-        } catch (RestClientException e) {
-            logger.warn("Demucs API not available, falling back to mock mode for job {}: {}", job.getId(), e.getMessage());
+        } catch (HttpStatusCodeException e) {
+            // GPU API'nin verdiği gerçek 4xx/5xx — kullanıcıya net hata göster, mock'a düşme
+            long elapsed = System.currentTimeMillis() - start;
+            String body = e.getResponseBodyAsString();
+            logger.error("[GPU-FAIL] GPU rejected job {} after {}ms — HTTP {} {}", job.getId(), elapsed, e.getStatusCode().value(), body);
+            job.setErrorMessage("GPU API: " + body);
+            return false;
+        } catch (ResourceAccessException e) {
+            // Network / timeout — Kaggle ulaşılamıyor olabilir, mock'a düş
+            long elapsed = System.currentTimeMillis() - start;
+            logger.warn("[GPU-FAIL] GPU unreachable after {}ms ({}) — mock mode'a düşülüyor", elapsed, e.getMessage());
             return mockProcessing(job);
+        } catch (RestClientException e) {
+            long elapsed = System.currentTimeMillis() - start;
+            logger.error("[GPU-FAIL] Unexpected GPU client error after {}ms: {}", elapsed, e.toString());
+            job.setErrorMessage("GPU API client error: " + e.getMessage());
+            return false;
         }
     }
 
@@ -152,6 +176,8 @@ public class ColabInferenceService {
      * İşlem tamamlanana veya hata oluşana kadar devam eder.
      */
     private boolean pollUntilComplete(Job job) {
+        long start = System.currentTimeMillis();
+        String lastMessage = "";
         for (int attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
             try {
                 Thread.sleep(POLL_INTERVAL_MS);
@@ -164,27 +190,34 @@ public class ColabInferenceService {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode != 200) {
-                    logger.warn("Poll attempt {} for job {} returned HTTP {}", attempt, job.getId(), responseCode);
+                    logger.warn("[POLL] job={} attempt={} HTTP {}", job.getId(), attempt, responseCode);
                     continue;
                 }
 
                 String responseBody = readResponse(conn);
-                logger.debug("Poll job {} attempt {}: {}", job.getId(), attempt, responseBody);
 
-                // Basit JSON parse (Jackson kullanmadan)
+                // Progress + message değiştiğinde tek satır basıt log (sürekli aynı mesajı tekrarlamaz)
+                String prog = extractField(responseBody, "progress");
+                String msg = extractField(responseBody, "message");
+                String key = prog + "|" + msg;
+                if (!key.equals(lastMessage)) {
+                    long elapsed = (System.currentTimeMillis() - start) / 1000;
+                    logger.info("[POLL] job={} t+{}s progress={}% — {}", job.getId(), elapsed, prog, msg);
+                    lastMessage = key;
+                }
+
                 if (responseBody.contains("\"status\": \"completed\"") ||
                     responseBody.contains("\"status\":\"completed\"")) {
-                    logger.info("Job {} completed after {} poll attempts", job.getId(), attempt + 1);
+                    logger.info("[POLL-OK] job={} completed in {}s after {} polls", job.getId(),
+                        (System.currentTimeMillis() - start) / 1000, attempt + 1);
                     return true;
                 }
 
                 if (responseBody.contains("\"status\": \"failed\"") ||
                     responseBody.contains("\"status\":\"failed\"")) {
-                    logger.error("Job {} failed on Demucs API: {}", job.getId(), responseBody);
+                    logger.error("[POLL-FAIL] job={} GPU reports failed: {}", job.getId(), responseBody);
                     return false;
                 }
-
-                // Hala işleniyor, devam et
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -197,6 +230,21 @@ public class ColabInferenceService {
 
         logger.error("Job {} timed out after {} attempts", job.getId(), MAX_POLL_ATTEMPTS);
         return false;
+    }
+
+    /**
+     * Basit JSON field çıkarıcı (Jackson olmadan). Hem string hem sayı değerleri yakalar.
+     * Örn. "progress":50 → "50", "message":"x" → "x".
+     */
+    private String extractField(String json, String key) {
+        if (json == null) return "";
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+            "\"" + java.util.regex.Pattern.quote(key) + "\"\\s*:\\s*(?:\"([^\"]*)\"|([\\d.]+))"
+        ).matcher(json);
+        if (m.find()) {
+            return m.group(1) != null ? m.group(1) : m.group(2);
+        }
+        return "";
     }
 
     /**

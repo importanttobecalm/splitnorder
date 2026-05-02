@@ -13,7 +13,11 @@ JAVA_OPTS="-Xms512m -Xmx2048m"
 JAVA_OPTS="$JAVA_OPTS '-Dmysql.url=jdbc:mysql://10.0.1.212:3306/stemsep_db?characterEncoding=utf-8&useSSL=true&serverTimezone=UTC'"
 JAVA_OPTS="$JAVA_OPTS -Dmysql.user=admin"
 JAVA_OPTS="$JAVA_OPTS -Dmysql.password=${MYSQL_PASSWORD}"
-JAVA_OPTS="$JAVA_OPTS -Dcolab.api.url=http://10.0.1.250:5000"
+JAVA_OPTS="$JAVA_OPTS -Dcolab.api.url=https://seizing-hatless-reflector.ngrok-free.dev"
+
+# Upload/stem dizinleri — production'da sabit absolute path (cwd=/ sorununu önler)
+JAVA_OPTS="$JAVA_OPTS -Dupload.directory=/var/lib/stemsep/uploads"
+JAVA_OPTS="$JAVA_OPTS -Dstems.directory=/var/lib/stemsep/stems"
 
 # Encoding (Türkçe karakter)
 JAVA_OPTS="$JAVA_OPTS -Dfile.encoding=UTF-8"
