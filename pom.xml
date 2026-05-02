@@ -171,13 +171,14 @@
             <version>2.2</version>
             <scope>test</scope>
         </dependency>
-        <!-- Mockito'nun bundled byte-buddy'si JDK 21+ class file version'larını
-             tanıyamıyor ("Unknown Java version: 0"). En yeni byte-buddy ile override. -->
+        <!-- byte-buddy: Hibernate 6 runtime (entity enhancement) + Mockito test için.
+             Mockito'nun bundled versiyonu JDK 21+ class file version'larını tanıyamıyor
+             ("Unknown Java version: 0"); ayrıca Hibernate runtime'da NamingStrategy çağırıyor →
+             default scope (compile/runtime) gerekli. -->
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
             <version>1.15.11</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>net.bytebuddy</groupId>
