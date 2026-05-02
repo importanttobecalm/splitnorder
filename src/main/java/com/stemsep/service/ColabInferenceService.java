@@ -129,6 +129,7 @@ public class ColabInferenceService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            headers.set("ngrok-skip-browser-warning", "true");
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new FileSystemResource(audioFile));
@@ -185,6 +186,7 @@ public class ColabInferenceService {
                 URL url = new URL(colabApiUrl + "/api/job/" + job.getId() + "/status");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
+                conn.setRequestProperty("ngrok-skip-browser-warning", "true");
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(10000);
 

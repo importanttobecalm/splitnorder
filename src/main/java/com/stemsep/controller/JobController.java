@@ -4,6 +4,7 @@ import com.stemsep.model.Job;
 import com.stemsep.model.Stem;
 import com.stemsep.service.JobService;
 import com.stemsep.service.StemService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,9 +42,10 @@ public class JobController {
 
         model.addAttribute("job", job);
 
+        // Tarayıcı için local proxy URL'leri oluştur (ngrok doğrudan açılmaz)
         Map<String, String> stemUrls = new HashMap<>();
         for (Stem s : job.getStems()) {
-            stemUrls.put(s.getStemType(), s.getDownloadUrl());
+            stemUrls.put(s.getStemType(), "/job/" + id + "/download/" + s.getStemType());
         }
         model.addAttribute("stemUrls", stemUrls);
 
@@ -78,32 +81,64 @@ public class JobController {
         return response;
     }
 
+    /**
+     * Stem proxy endpoint — ngrok üzerindeki Kaggle API'den stem'i çekip
+     * tarayıcıya döndürür. ngrok-skip-browser-warning header'ı eklenir.
+     * Range header desteği ile audio player'da seek çalışır.
+     */
     @GetMapping("/{id}/download/{stemType}")
     public void downloadStem(@PathVariable Long id, @PathVariable String stemType,
+                             HttpServletRequest request,
                              HttpServletResponse response) throws IOException {
         Stem stem = stemService.getStemByJobAndType(id, stemType);
-        if (stem == null || stem.getFilePath() == null) {
+        if (stem == null || stem.getDownloadUrl() == null) {
             response.sendError(404);
             return;
         }
 
-        File file = new File(stem.getFilePath());
-        if (!file.exists()) {
-            response.sendError(404);
-            return;
-        }
+        String remoteUrl = stem.getDownloadUrl();
+        logger.info("[PROXY] job={} stem={} → {}", id, stemType, remoteUrl);
 
-        response.setContentType("audio/wav");
-        response.setHeader("Content-Disposition", "inline; filename=\"" + stemType + ".wav\"");
-        response.setContentLength((int) file.length());
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(remoteUrl).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("ngrok-skip-browser-warning", "true");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(120000);
 
-        try (FileInputStream fis = new FileInputStream(file);
-             OutputStream os = response.getOutputStream()) {
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = fis.read(buffer)) != -1) {
-                os.write(buffer, 0, bytesRead);
+            // Range header'ı ilet (audio seek desteği)
+            String rangeHeader = request.getHeader("Range");
+            if (rangeHeader != null) {
+                conn.setRequestProperty("Range", rangeHeader);
             }
+
+            int status = conn.getResponseCode();
+            response.setStatus(status);
+            response.setContentType("audio/wav");
+            response.setHeader("Content-Disposition", "inline; filename=\"" + stemType + ".wav\"");
+            response.setHeader("Accept-Ranges", "bytes");
+
+            // Content-Length ve Content-Range header'larını kopyala
+            String contentLength = conn.getHeaderField("Content-Length");
+            if (contentLength != null) {
+                response.setHeader("Content-Length", contentLength);
+            }
+            String contentRange = conn.getHeaderField("Content-Range");
+            if (contentRange != null) {
+                response.setHeader("Content-Range", contentRange);
+            }
+
+            try (InputStream is = conn.getInputStream();
+                 OutputStream os = response.getOutputStream()) {
+                byte[] buffer = new byte[16384];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+            }
+        } catch (IOException e) {
+            logger.error("[PROXY] Failed to fetch stem {} for job {}: {}", stemType, id, e.getMessage());
+            response.sendError(502, "GPU API'den stem alınamadı");
         }
     }
 
@@ -127,11 +162,17 @@ public class JobController {
                     continue;
                 }
                 zos.putNextEntry(new ZipEntry(stem.getStemType() + ".wav"));
-                try (InputStream is = new URL(url).openStream()) {
-                    byte[] buffer = new byte[8192];
-                    int bytesRead;
-                    while ((bytesRead = is.read(buffer)) != -1) {
-                        zos.write(buffer, 0, bytesRead);
+                try {
+                    HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                    conn.setRequestProperty("ngrok-skip-browser-warning", "true");
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(120000);
+                    try (InputStream is = conn.getInputStream()) {
+                        byte[] buffer = new byte[16384];
+                        int bytesRead;
+                        while ((bytesRead = is.read(buffer)) != -1) {
+                            zos.write(buffer, 0, bytesRead);
+                        }
                     }
                 } catch (IOException e) {
                     logger.error("Failed to fetch stem {} from {}: {}", stem.getStemType(), url, e.getMessage());
