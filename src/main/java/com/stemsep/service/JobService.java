@@ -35,12 +35,30 @@ public class JobService {
 
     @Transactional
     public Job createJob(String sessionId, MultipartFile file, String model) throws IOException {
-        Path uploadDir = Paths.get(uploadDirectory);
+        Path uploadDir = Paths.get(uploadDirectory).toAbsolutePath().normalize();
+        logger.info("[UPLOAD-1] cwd={}, uploadDir={}, exists={}",
+            Paths.get("").toAbsolutePath(), uploadDir, Files.exists(uploadDir));
         Files.createDirectories(uploadDir);
+        logger.info("[UPLOAD-2] uploadDir created/verified: writable={}", Files.isWritable(uploadDir));
 
-        String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Path filePath = uploadDir.resolve(filename);
-        file.transferTo(filePath.toFile());
+        String safeName = file.getOriginalFilename() == null ? "audio" : file.getOriginalFilename();
+        String filename = System.currentTimeMillis() + "_" + safeName;
+        Path filePath = uploadDir.resolve(filename).toAbsolutePath().normalize();
+        logger.info("[UPLOAD-3] target absolute path={}, originalSize={} bytes",
+            filePath, file.getSize());
+
+        try {
+            file.transferTo(filePath.toFile());
+        } catch (IOException e) {
+            logger.error("[UPLOAD-FAIL] transferTo failed for {}: {}", filePath, e.toString());
+            // Spring/Tomcat fallback: stream copy directly
+            try (var in = file.getInputStream()) {
+                Files.copy(in, filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                logger.info("[UPLOAD-3b] stream-copy fallback succeeded");
+            }
+        }
+        logger.info("[UPLOAD-4] saved {} bytes to {}",
+            Files.size(filePath), filePath);
 
         Job job = new Job();
         job.setSessionId(sessionId);
@@ -50,7 +68,7 @@ public class JobService {
         job.setStatus(JobStatus.PENDING);
 
         jobDao.save(job);
-        logger.info("Job created: id={}, file={}, model={}", job.getId(), file.getOriginalFilename(), model);
+        logger.info("[UPLOAD-5] Job created: id={}, file={}, model={}", job.getId(), file.getOriginalFilename(), model);
 
         return job;
     }

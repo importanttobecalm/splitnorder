@@ -13,18 +13,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #7c3aed;
-            --primary-light: #a78bfa;
-            --primary-dark: #5b21b6;
-            --accent: #06b6d4;
-            --bg-dark: #0f0f23;
-            --bg-card: #1a1a2e;
-            --bg-card-hover: #25254a;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --gradient-1: linear-gradient(135deg, #7c3aed, #06b6d4);
-            --gradient-2: linear-gradient(135deg, #1a1a2e, #2d1b69);
-            --glow: 0 0 40px rgba(124, 58, 237, 0.3);
+            --primary: #e8d8b0;
+            --primary-light: #f5e9c7;
+            --primary-dark: #c4b289;
+            --accent: #c4a875;
+            --bg-dark: #0a0908;
+            --bg-card: #14120f;
+            --bg-card-hover: #1c1916;
+            --text-primary: #f0ebe0;
+            --text-secondary: #8a8378;
+            --gradient-1: linear-gradient(135deg, #e8d8b0, #c4a875);
+            --gradient-2: linear-gradient(135deg, #14120f, #1c1916);
+            --glow: 0 0 40px rgba(232, 216, 176, 0.18);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -43,9 +43,9 @@
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background:
-                radial-gradient(circle at 20% 50%, rgba(124,58,237,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(6,182,212,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(124,58,237,0.05) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(232, 216, 176,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(196, 168, 117,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(232, 216, 176,0.05) 0%, transparent 50%);
             z-index: -1;
             animation: bgPulse 8s ease-in-out infinite alternate;
         }
@@ -57,9 +57,9 @@
 
         /* Navbar */
         .navbar {
-            background: rgba(15, 15, 35, 0.8) !important;
+            background: rgba(10, 9, 8, 0.8) !important;
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(124,58,237,0.2);
+            border-bottom: 1px solid rgba(232, 216, 176,0.2);
             padding: 1rem 0;
         }
 
@@ -168,7 +168,7 @@
 
         .btn-glow:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 60px rgba(124,58,237,0.5);
+            box-shadow: 0 0 60px rgba(232, 216, 176,0.5);
             color: white;
         }
 
@@ -202,7 +202,7 @@
 
         .feature-card {
             background: var(--bg-card);
-            border: 1px solid rgba(124,58,237,0.15);
+            border: 1px solid rgba(232, 216, 176,0.15);
             border-radius: 16px;
             padding: 2rem;
             text-align: center;
@@ -212,7 +212,7 @@
 
         .feature-card:hover {
             background: var(--bg-card-hover);
-            border-color: rgba(124,58,237,0.4);
+            border-color: rgba(232, 216, 176,0.4);
             transform: translateY(-8px);
             box-shadow: var(--glow);
         }
@@ -260,12 +260,12 @@
             background: var(--bg-card);
             border-radius: 12px;
             margin-bottom: 1rem;
-            border: 1px solid rgba(124,58,237,0.1);
+            border: 1px solid rgba(232, 216, 176,0.1);
             transition: all 0.3s;
         }
 
         .step:hover {
-            border-color: rgba(124,58,237,0.3);
+            border-color: rgba(232, 216, 176,0.3);
             background: var(--bg-card-hover);
         }
 
@@ -288,7 +288,7 @@
             padding: 2rem;
             color: var(--text-secondary);
             font-size: 0.85rem;
-            border-top: 1px solid rgba(124,58,237,0.1);
+            border-top: 1px solid rgba(232, 216, 176,0.1);
             margin-top: 4rem;
         }
 
