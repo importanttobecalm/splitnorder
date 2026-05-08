@@ -55,7 +55,8 @@ updated: 2026-05-08
 - `POST /api/separate` (multipart: file, model, job_id) → 200/202
 - `GET /api/job/{id}/status` → `{"status":"processing|completed|failed","progress":N,"message":"..."}`
 - `GET /api/stem/{id}/{stemType}` → stem WAV dosyası
-**Doğru:** Notebook'ta Flask'a 3 route'u da ekle. `/api/separate` async olmalı (thread'e at + 202 dön), `/api/job/{id}/status` bellekteki dict'ten oku, `/api/stem/...` Demucs çıktısını `send_file` et. Header `ngrok-skip-browser-warning: true` Java tarafından gönderiliyor, sıkıntı yok.
+**Doğru:** Notebook'ta Flask'a 3 route'u da ekle. Header `ngrok-skip-browser-warning: true` Java tarafından gönderiliyor, sıkıntı yok.
+**Bu projede uygulanan (2026-05-08):** Demucs ~8 sn sürdüğü için async/polling overhead'i değmiyor → **sync + her zaman 200** yaklaşımı seçildi. `/api/separate` Demucs'ı blocking çalıştırır 200 döner, `/api/job/{id}/status` her zaman `{"status":"completed"}` döner (Java'nın polling loop'u ilk denemede biter), `/api/stem/{id}/{type}` `send_file` ile WAV döner. Mimari olarak async daha temiz ama bu ödev için pratik tercih.
 
 ## yusufun-dali ≠ origin/main
 **Tuzak:** yusufun-dali dalında yapılan docs commit'leri (PROJECT_REVIEW.md, README rewrite) main'e merge edilmedi.

@@ -65,11 +65,11 @@ Ders teslim kriterleri açısından geliştirme tamamlanmış sayılır. Eksikli
 - DNS: GoDaddy'de `@` ve `www` A kayıtları → 130.61.66.0 (Yusuf ekledi).
 - Frontend smoke test: `/`, `/upload`, `/history` 200 ✓. Türkçe i18n çalışıyor.
 
-**Açık iş (kullanıcıya kalan):** Kaggle notebook Flask app'ine 3 route ekle:
-- `POST /api/separate` (async, 202 dön) — şu an synchronous gibi görünüyor
-- `GET /api/job/{id}/status` — **eksik, 404 sebebi** (`{status, progress, message}` döner)
-- `GET /api/stem/{id}/{stemType}` — stem WAV indirme
-Format detayı: `memory/gotchas.md` "Java backend Kaggle Flask'tan 3 endpoint bekliyor".
+**Kaggle Flask endpoint'leri çözüldü (sync + her zaman 200 yaklaşımı):**
+- `POST /api/separate` — Demucs blocking, 200 dön (~8 sn)
+- `GET /api/job/{id}/status` — her zaman `{"status":"completed"}` (Java polling ilk denemede biter)
+- `GET /api/stem/{id}/{stemType}` — stem WAV `send_file`
+Gerekçe: Demucs 8 sn sürüyor, async/polling overhead'i değmiyor. Detay: `memory/gotchas.md` ve `user_splitnorder_demo_deploy.md`.
 
 **Aktif Kaggle ngrok URL:** `https://approval-licking-thread.ngrok-free.dev` (notebook session düşerse ölür → yeni URL al → `set-gpu-url.sh` ile inject et).
 

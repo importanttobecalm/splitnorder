@@ -6,6 +6,7 @@ updated: 2026-05-08
 ---
 
 ## 2026-05-08
+- decision: Kaggle Flask endpoint'leri **sync + her zaman 200** yaklaşımıyla çözüldü. Sebep: Demucs ~8 sn → async/polling overhead'i değmiyor. `/api/separate` blocking, `/api/job/{id}/status` her zaman completed döner, `/api/stem/...` send_file. Detay: memory/gotchas.md, memory/user_splitnorder_demo_deploy.md
 - deploy: splitnorder canlı demoya alındı — `https://splitnorder.space/` (Let's Encrypt TLS, Caddy reverse proxy). vespay Oracle VM'de docker compose (mysql:8.0 + tomcat:10.1-jdk17). Sebep: ödev demo URL ihtiyacı. /home/ubuntu/splitnorder-demo/, memory/user_splitnorder_demo_deploy.md
 - fix: WAR `ROOT.war` olarak deploy edildi (önce `stemsep.war`'dı, context `/stemsep/` JSP'lerdeki absolute href'lerle 404 yaratıyordu). Sonuç: tüm linkler doğal çalışır, URL temiz. docker-compose.yml
 - chore: `src/main/resources/hibernate.properties` (gitignored) production değerleriyle build öncesi oluşturuldu; WAR'a gömüldü. set-gpu-url.sh ile sadece `colab.api.url` override.
