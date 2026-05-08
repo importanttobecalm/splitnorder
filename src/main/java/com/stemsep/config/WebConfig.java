@@ -71,3 +71,4 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("/static/");
     }
 }
+
