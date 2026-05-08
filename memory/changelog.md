@@ -2,8 +2,15 @@
 name: Changelog
 description: Anlamlı değişikliklerin tarihli listesi (en yeni üstte)
 type: project
-updated: 2026-05-01
+updated: 2026-05-08
 ---
+
+## 2026-05-08
+- deploy: splitnorder canlı demoya alındı — `https://splitnorder.space/` (Let's Encrypt TLS, Caddy reverse proxy). vespay Oracle VM'de docker compose (mysql:8.0 + tomcat:10.1-jdk17). Sebep: ödev demo URL ihtiyacı. /home/ubuntu/splitnorder-demo/, memory/user_splitnorder_demo_deploy.md
+- fix: WAR `ROOT.war` olarak deploy edildi (önce `stemsep.war`'dı, context `/stemsep/` JSP'lerdeki absolute href'lerle 404 yaratıyordu). Sonuç: tüm linkler doğal çalışır, URL temiz. docker-compose.yml
+- chore: `src/main/resources/hibernate.properties` (gitignored) production değerleriyle build öncesi oluşturuldu; WAR'a gömüldü. set-gpu-url.sh ile sadece `colab.api.url` override.
+- chore: yusuf2 dalına `origin/main` merge edildi (Kaggle GPU + dev.sh + setup-mac.sh + JSP refresh getirdi). Memory dosyaları korundu (main'de yoktu, conflict yok). -
+- ops: vespay sunucusu sağlık kontrolü yapıldı — load 0.00, disk %21, RAM 14 GB boş. `vespay-app-builder:latest` 3.84 GB **orphan multi-stage builder image** tespit edildi (acil değil, ileride prune adayı).
 
 ## 2026-05-01
 - refactor: 3 DAO (Job/User/Stem) — 6 JPQL sorgusu CriteriaBuilder'a çevrildi (jakarta.persistence.criteria). Sebep: slayt "SQL/HQL yerine Java nesne ve metotları" — NotebookLM citation [1]. ADR 07 ✅. src/main/java/com/stemsep/dao/, docs/decisions/07-criteria-builder.md

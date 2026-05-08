@@ -3,6 +3,8 @@
 - [Kararlar](decisions.md) — Mimari/teknik kararlar
 - [Gotchas](gotchas.md) — Tekrar edilmemesi gereken hatalar
 - [Kullanıcı Profili](user_profile.md) — Çalışma tarzı ve tercihler
+- 🔑 [SSH Erişimi — Oracle VM](user_ssh_access.md) — Berkan'ın VM'ine SSH key + host config (gitignored)
+- 🚀 [splitnorder Canlı Demo](user_splitnorder_demo_deploy.md) — splitnorder.space vespay sunucu deploy + cleanup (gitignored, geçici)
 - [Ders Kuralları](project_course_rules.md) — BM470 sıkı kuralları
 - [Tech Stack](project_tech_stack.md) — Versiyonlar ve mimari özet
 - [NotebookLM MCP](reference_notebooklm.md) — Ders PDF'lerine sorgu erişimi (alias: bm470)

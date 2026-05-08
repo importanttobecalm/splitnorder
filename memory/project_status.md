@@ -2,7 +2,7 @@
 name: Proje Durumu
 description: splitnorder güncel durumu ve sıradaki işler
 type: project
-updated: 2026-05-01
+updated: 2026-05-08
 ---
 
 ## Proje: splitnorder (BM470 İleri Java Programlama ödevi)
@@ -10,11 +10,12 @@ updated: 2026-05-01
 Müzik kaynak ayrımı (Demucs) — Java Spring backend + Python Flask audio servisi + JSP frontend.
 Düzce Üniv. MF BM, Doç. Dr. Talha KABAKUŞ.
 
-### Mevcut Durum (2026-05-01)
-- **Aktif dal:** `yusuf2` — `origin/yusuf2`'ye push edildi (8c3a162)
+### Mevcut Durum (2026-05-08)
+- **Aktif dal:** `yusuf2` — `origin/main` merge edildi, lokalde 8 commit ileride (push edilmedi)
 - **GitHub:** https://github.com/importanttobecalm/splitnorder/tree/yusuf2
 - **Build:** `mvn test -Dtest='!OracleMySQLConnectionTest'` → **20/20 PASS**
 - **Ders kurallarına uyum:** %100 (13/13 ADR ✅) — bkz. `docs/decisions/`
+- **Canlı demo:** ✅ `https://splitnorder.space/` — vespay Oracle VM'de docker compose (geçici, ödev sonrası silinecek). Detay: `memory/user_splitnorder_demo_deploy.md`
 
 ### Mimari Özet
 - Spring 6.0.4 (saf, Boot yok) + `WebApplicationInitializer`
@@ -54,4 +55,22 @@ Ders teslim kriterleri açısından geliştirme tamamlanmış sayılır. Eksikli
 ### Son Oturum Notu (2026-05-01)
 **Yapıldı:** ADR sistemi + JUnit 5 + log4j 2.x stack + CriteriaBuilder. Tüm değişiklikler `yusuf2` dalında commit + push.
 **Test durumu:** 20/20 yeşil.
-**Sıradaki:** Kullanıcı yönlendirecek (rapor PDF'i, PR, deploy, vb.).
+
+### Son Oturum Notu (2026-05-08)
+**Yapıldı:**
+- `yusuf2` dalına `origin/main` merge edildi (Kaggle GPU + dev.sh + setup-mac.sh + JSP refresh getirdi). Memory dosyaları korundu. **Henüz push edilmedi**, lokalde 8 commit ileride.
+- Berkan'ın Oracle VM'i için SSH key oluşturuldu, public key Berkan'a verildi (authorized_keys'e ekleyince `ssh oracle` çalışacak). Detay: `memory/user_ssh_access.md`.
+- Yusuf'un kendi Oracle VM'i (`vespay`, 130.61.66.0) sağlığı kontrol edildi: çok rahat, image hijyeni dışında temiz.
+- **splitnorder canlı demoya alındı:** `https://splitnorder.space/` — Let's Encrypt TLS, Caddy reverse proxy, docker compose. ROOT.war + MySQL 8.0 + Tomcat 10.1-jdk17. Detay + cleanup: `memory/user_splitnorder_demo_deploy.md`.
+- DNS: GoDaddy'de `@` ve `www` A kayıtları → 130.61.66.0 (Yusuf ekledi).
+- Frontend smoke test: `/`, `/upload`, `/history` 200 ✓. Türkçe i18n çalışıyor.
+
+**Açık iş (kullanıcıya kalan):** Kaggle notebook Flask app'ine 3 route ekle:
+- `POST /api/separate` (async, 202 dön) — şu an synchronous gibi görünüyor
+- `GET /api/job/{id}/status` — **eksik, 404 sebebi** (`{status, progress, message}` döner)
+- `GET /api/stem/{id}/{stemType}` — stem WAV indirme
+Format detayı: `memory/gotchas.md` "Java backend Kaggle Flask'tan 3 endpoint bekliyor".
+
+**Aktif Kaggle ngrok URL:** `https://approval-licking-thread.ngrok-free.dev` (notebook session düşerse ölür → yeni URL al → `set-gpu-url.sh` ile inject et).
+
+**Sıradaki:** Yusuf Kaggle Flask endpoint'lerini ekleyince upload akışı çalışacak. Sonrası: ödev sunumu + cleanup.
