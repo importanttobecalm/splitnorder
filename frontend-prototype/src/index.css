@@ -35,6 +35,13 @@ body {
   background: transparent !important;
 }
 
+/* Stronger, controllable dot pattern as CSS background — replaces RF Background dot opacity. */
+.studio-canvas-bg {
+  background-image: radial-gradient(circle, #C8D4E0 1.5px, transparent 1.6px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+
 /* Per-stem volume slider — filled portion uses stem color, rest light gray */
 input[type="range"].stem-volume {
   -webkit-appearance: none;
@@ -78,4 +85,41 @@ input[type="range"].stem-volume::-moz-range-thumb {
 }
 .no-scrollbar {
   scrollbar-width: none;
+}
+
+/* Animated electric-flow overlay on top of each edge */
+@keyframes flow-pulse {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.flow-edge-animated {
+  stroke-dasharray: 8 6;
+  animation: flow-pulse 1.6s linear infinite;
+  will-change: stroke-dashoffset;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flow-edge-animated {
+    animation: none;
+  }
+}
+
+/* Master waveform playhead — soft glow when playing */
+.master-playhead-active {
+  animation: playhead-pulse 1.2s ease-in-out infinite;
+}
+@keyframes playhead-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .master-playhead-active {
+    animation: none;
+    opacity: 0.8;
+  }
 }

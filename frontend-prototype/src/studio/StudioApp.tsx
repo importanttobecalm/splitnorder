@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
-  Background,
-  BackgroundVariant,
   type Node,
   type Edge,
   type NodeTypes,
@@ -17,8 +15,12 @@ import { InputNode } from "./InputNode";
 import { StemEdge } from "./StemEdge";
 import { MasterPlayer } from "./MasterPlayer";
 import { Logo } from "./Logo";
+import JSZip from "jszip";
 import { mockConfig } from "./mockData";
+import { silentWavBlob, triggerDownload } from "./mockAudio";
 import type { StemKey } from "./types";
+
+const MOCK_FILENAME = "After Midnight - The Midnight Drive.mp3";
 
 const nodeTypes: NodeTypes = {
   input: InputNode,
@@ -97,10 +99,16 @@ export default function StudioApp() {
     setVolumes((vs) => ({ ...vs, [k]: v }));
   }, []);
   const onDownload = useCallback((k: StemKey) => {
-    console.info("[mock] download", k);
+    const blob = silentWavBlob(2);
+    triggerDownload(blob, `${k}.wav`);
   }, []);
-  const onDownloadAll = useCallback(() => {
-    console.info("[mock] download all (zip)");
+  const onDownloadAll = useCallback(async () => {
+    const zip = new JSZip();
+    for (const s of mockConfig.stems) {
+      zip.file(`${s.key}.wav`, silentWavBlob(2));
+    }
+    const blob = await zip.generateAsync({ type: "blob" });
+    triggerDownload(blob, "splitnorder-stems.zip");
   }, []);
   const onShare = useCallback(() => {
     if (navigator.share) {
@@ -117,8 +125,9 @@ export default function StudioApp() {
         type: "input",
         position: NODE_POSITIONS.input,
         data: {
+          fileName: MOCK_FILENAME,
           playing,
-          progress,
+          progress: 0,
           onTogglePlay: togglePlay,
         },
         draggable: false,
@@ -135,7 +144,7 @@ export default function StudioApp() {
           soft: s.soft,
           solo: solo === s.key,
           muted: muted[s.key] || (solo !== null && solo !== s.key),
-          progress,
+          progress: 0,
           volume: volumes[s.key],
           onSolo,
           onMute,
@@ -148,7 +157,6 @@ export default function StudioApp() {
     ],
     [
       playing,
-      progress,
       solo,
       muted,
       volumes,
@@ -206,7 +214,7 @@ export default function StudioApp() {
       </header>
 
       {/* Node graph */}
-      <main className="flex-1 relative min-h-0">
+      <main className="flex-1 relative min-h-0 studio-canvas-bg">
         <ReactFlowProvider>
           <ReactFlow
             nodes={nodes}
@@ -226,12 +234,7 @@ export default function StudioApp() {
             panOnScroll={false}
             preventScrolling={false}
           >
-            <Background
-              variant={BackgroundVariant.Dots}
-              gap={24}
-              size={1}
-              color="#D5DEE8"
-            />
+            {/* dot pattern handled by .studio-canvas-bg parent for reliable opacity */}
           </ReactFlow>
         </ReactFlowProvider>
       </main>

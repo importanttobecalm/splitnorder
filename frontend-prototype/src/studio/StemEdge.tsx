@@ -64,7 +64,7 @@ export function StemEdge(props: EdgeProps) {
     targetX: t.x,
     targetY: t.y,
     targetPosition: t.pos,
-    curvature: 0.55,
+    curvature: 0.85,
   });
 
   const gradId = `edge-grad-${id}`;
@@ -108,6 +108,19 @@ export function StemEdge(props: EdgeProps) {
         style={{
           stroke: `url(#${gradId})`,
           strokeWidth: 5,
+          strokeLinecap: "round",
+          fill: "none",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Animated dashed overlay — "electric flow" toward stem */}
+      <path
+        d={path}
+        className="flow-edge-animated"
+        style={{
+          stroke: color,
+          strokeOpacity: 0.7,
+          strokeWidth: 3,
           strokeLinecap: "round",
           fill: "none",
           pointerEvents: "none",

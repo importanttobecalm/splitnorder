@@ -26,6 +26,7 @@ const BAR_GAP = 2;
 interface StackProps {
   half: "left" | "right";
   progress: number; // 0..1 global
+  playing: boolean;
   onSeek: (globalP: number) => void;
 }
 
@@ -34,7 +35,7 @@ interface StackProps {
  * `progress` is global 0..1; left half shows 0..0.5 mapped to 0..1,
  * right half shows 0.5..1 mapped to 0..1.
  */
-function StemWaveStack({ half, progress, onSeek }: StackProps) {
+function StemWaveStack({ half, progress, playing, onSeek }: StackProps) {
   const localProgress =
     half === "left"
       ? Math.max(0, Math.min(1, progress * 2))
@@ -91,11 +92,19 @@ function StemWaveStack({ half, progress, onSeek }: StackProps) {
           </svg>
         );
       })}
-      {/* Local playhead line */}
+      {/* Local playhead line — pulsing when playing */}
       {localProgress > 0 && localProgress < 1 && (
         <div
-          className="absolute top-0 bottom-0 w-px bg-ink/40 pointer-events-none"
-          style={{ left: `${localProgress * 100}%` }}
+          className={`absolute top-0 bottom-0 pointer-events-none ${
+            playing ? "master-playhead-active" : ""
+          }`}
+          style={{
+            left: `${localProgress * 100}%`,
+            width: 2,
+            background: "#4A90E2",
+            boxShadow: "0 0 8px rgba(74,144,226,0.6)",
+            borderRadius: 1,
+          }}
         />
       )}
     </div>
@@ -126,7 +135,7 @@ export function MasterPlayer({
       </div>
 
       {/* Left stem-stack waveform (first half) */}
-      <StemWaveStack half="left" progress={progress} onSeek={onSeek} />
+      <StemWaveStack half="left" progress={progress} playing={playing} onSeek={onSeek} />
 
       {/* Center play button */}
       <button
@@ -148,7 +157,7 @@ export function MasterPlayer({
       </button>
 
       {/* Right stem-stack waveform (second half) */}
-      <StemWaveStack half="right" progress={progress} onSeek={onSeek} />
+      <StemWaveStack half="right" progress={progress} playing={playing} onSeek={onSeek} />
 
       {/* Master volume */}
       <div className="flex items-center gap-2 shrink-0">

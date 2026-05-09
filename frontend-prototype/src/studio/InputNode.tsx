@@ -4,6 +4,7 @@ import { MiniWaveform } from "./MiniWaveform";
 import { STEM_PEAKS } from "./mockData";
 
 export interface InputNodeData {
+  fileName: string;
   playing: boolean;
   progress: number;
   onTogglePlay: () => void;
@@ -13,8 +14,10 @@ export function InputNode({ data }: NodeProps) {
   const d = data as unknown as InputNodeData;
   return (
     <div
-      className="bg-white rounded-2xl px-4 py-3 w-[220px] flex items-center gap-3"
+      className="bg-white rounded-2xl flex items-center w-[320px]"
       style={{
+        padding: "20px",
+        gap: "16px",
         boxShadow:
           "0 2px 4px rgba(31,34,48,.05), 0 18px 40px rgba(31,34,48,.10)",
         border: "1px solid rgba(31,34,48,0.06)",
@@ -23,13 +26,18 @@ export function InputNode({ data }: NodeProps) {
       <Handle type="target" position={Position.Left} />
       <Handle type="source" position={Position.Right} />
 
-      <div className="w-9 h-9 rounded-xl bg-canvas-soft border border-canvas-line/70 flex items-center justify-center text-ink-soft shrink-0">
-        <Music2 size={16} />
+      {/* Album art */}
+      <div className="w-11 h-11 rounded-xl bg-canvas-soft border border-canvas-line flex items-center justify-center text-ink-soft shrink-0">
+        <Music2 size={18} />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="text-[12px] font-semibold text-ink leading-tight mb-1 truncate">
-          input node
+      {/* Title + waveform */}
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <div
+          className="text-[13px] font-semibold text-ink leading-tight truncate"
+          title={d.fileName}
+        >
+          {d.fileName}
         </div>
         <MiniWaveform
           peaks={STEM_PEAKS.input}
@@ -39,13 +47,18 @@ export function InputNode({ data }: NodeProps) {
         />
       </div>
 
+      {/* Play */}
       <button
         onClick={d.onTogglePlay}
-        className="w-9 h-9 rounded-full bg-ink text-white flex items-center justify-center
+        className="w-10 h-10 rounded-full bg-ink text-white flex items-center justify-center
                    hover:bg-ink-soft transition shrink-0"
         title={d.playing ? "Pause" : "Play"}
       >
-        {d.playing ? <Pause size={14} fill="white" /> : <Play size={14} fill="white" className="ml-0.5" />}
+        {d.playing ? (
+          <Pause size={14} fill="white" />
+        ) : (
+          <Play size={14} fill="white" className="ml-0.5" />
+        )}
       </button>
     </div>
   );

@@ -85,11 +85,19 @@ export function StemNode({ data }: NodeProps) {
         <button
           onClick={() => d.onSolo(d.stemKey)}
           aria-pressed={d.solo}
-          className={`w-7 h-7 rounded-md text-[11px] font-bold transition shrink-0
-            ${d.solo
-              ? "text-white"
-              : "bg-canvas-soft text-ink-soft hover:bg-canvas-line"}`}
-          style={d.solo ? { backgroundColor: d.color } : undefined}
+          className="w-7 h-7 rounded-md text-[11px] font-bold transition shrink-0"
+          style={
+            d.solo
+              ? {
+                  backgroundColor: d.soft,
+                  border: `2px solid ${d.color}`,
+                  color: d.color,
+                }
+              : {
+                  backgroundColor: "#F4F8FB",
+                  color: "#4A4F62",
+                }
+          }
           title="Solo"
         >
           S
@@ -97,10 +105,12 @@ export function StemNode({ data }: NodeProps) {
         <button
           onClick={() => d.onMute(d.stemKey)}
           aria-pressed={d.muted && !d.solo}
-          className={`w-7 h-7 rounded-md text-[11px] font-bold transition shrink-0
-            ${d.muted && !d.solo
-              ? "bg-ink text-white"
-              : "bg-canvas-soft text-ink-soft hover:bg-canvas-line"}`}
+          className="w-7 h-7 rounded-md text-[11px] font-bold transition shrink-0"
+          style={
+            d.muted && !d.solo
+              ? { backgroundColor: "#8A8FA3", color: "#FFFFFF" }
+              : { backgroundColor: "#F4F8FB", color: "#4A4F62" }
+          }
           title="Mute"
         >
           M
