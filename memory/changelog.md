@@ -2,8 +2,12 @@
 name: Changelog
 description: Anlamlı değişikliklerin tarihli listesi (en yeni üstte)
 type: project
-updated: 2026-05-08
+updated: 2026-05-09
 ---
+
+## 2026-05-09
+- feat: `frontend-prototype/` klasörü kuruldu — Vite + React 19 + TS + Tailwind 3 + @xyflow/react + wavesurfer.js + lucide-react + jszip. Studio sayfasının ilk statik tasarımı `src/studio/` altına yazıldı: `StudioApp`, `InputNode`, `StemNode`, `StemEdge` (Bezier), `MasterPlayer`, `MiniWaveform`, `Logo` (4 renk treble clef SVG). Mockup'a (sonucSayfasi.png) sadık node-graph layout. Sebep: kullanıcı Studio sayfasını JSP island olarak yeniden tasarlamak istiyor; React kod Java'ya dokunmadan ayrı build edilecek. Dev: `cd frontend-prototype && npm run dev`. Tema kararı: açık tema + 4 logo rengi (vocals #E8554E, drums #F2A35E, bass #6B5B95, other #3FB8AF) — dark+gold brand kuralı bu sayfa için terk edildi.
+- decision: Studio sayfası React island olarak gömülecek, JSP/JSTL korunacak (ADR #11 ihlali yok). Audio engine henüz mock — Faz 4'te wavesurfer-multitrack eklenecek. Backend endpoint'leri (`/api/stem/{id}/{type}`) değişmeyecek.
 
 ## 2026-05-08
 - decision: Kaggle Flask endpoint'leri **sync + her zaman 200** yaklaşımıyla çözüldü. Sebep: Demucs ~8 sn → async/polling overhead'i değmiyor. `/api/separate` blocking, `/api/job/{id}/status` her zaman completed döner, `/api/stem/...` send_file. Detay: memory/gotchas.md, memory/user_splitnorder_demo_deploy.md

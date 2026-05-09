@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  color: #1f2230;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #ffffff 0%, transparent 60%),
+    linear-gradient(180deg, #faf7f2 0%, #f4f1ec 100%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* React Flow tweaks for our design language */
+.react-flow__attribution {
+  display: none !important;
+}
+.react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+.react-flow__edge-path {
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.react-flow__background {
+  background: transparent !important;
+}
+
+/* Per-stem volume slider — filled portion uses stem color, rest light gray */
+input[type="range"].stem-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--stem-color) 0%,
+    var(--stem-color) var(--stem-pct, 80%),
+    #E6E0D6 var(--stem-pct, 80%),
+    #E6E0D6 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"].stem-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid var(--stem-color);
+  box-shadow: 0 1px 3px rgba(31, 34, 48, 0.2);
+  cursor: pointer;
+}
+input[type="range"].stem-volume::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid var(--stem-color);
+  box-shadow: 0 1px 3px rgba(31, 34, 48, 0.2);
+  cursor: pointer;
+}
+
+/* Custom scroll for waveform overflow if needed */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
