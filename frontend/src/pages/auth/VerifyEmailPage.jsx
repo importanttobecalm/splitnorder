@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../../hooks/useI18n';
 import authApi from '../../api/authApi';
@@ -11,12 +11,16 @@ export default function VerifyEmailPage() {
   const token = searchParams.get('token');
 
   const [status, setStatus] = useState('loading'); // loading | success | error
+  const hasAttempted = useRef(false);
 
   useEffect(() => {
     if (!token) {
       setStatus('error');
       return;
     }
+
+    if (hasAttempted.current) return;
+    hasAttempted.current = true;
 
     const verify = async () => {
       try {

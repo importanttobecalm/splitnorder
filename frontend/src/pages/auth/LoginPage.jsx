@@ -46,7 +46,7 @@ export default function LoginPage() {
         // Kullanıcı bilgisini localStorage'a kaydet
         localStorage.setItem('splitnorder_user', JSON.stringify(data.user));
         // Ana sayfaya yönlendir (JSP sayfaları)
-        window.location.href = '/stemsep/';
+        window.location.href = 'http://localhost:8090/stemsep/';
       } else {
         if (data.error === 'EMAIL_NOT_VERIFIED') {
           setEmailNotVerified(true);
