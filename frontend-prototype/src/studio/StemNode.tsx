@@ -47,8 +47,9 @@ export function StemNode({ data }: NodeProps) {
 
   return (
     <div
-      className="bg-white rounded-2xl px-4 py-3 w-[260px] select-none transition"
+      className="bg-white px-4 py-3 w-[260px] select-none transition"
       style={{
+        borderRadius: "26px 22px 26px 22px",
         border: `2px solid ${d.solo ? d.color : "rgba(31,34,48,0.06)"}`,
         boxShadow: d.solo
           ? `0 0 0 4px ${d.color}22, 0 12px 32px rgba(31,34,48,.10)`
@@ -63,8 +64,11 @@ export function StemNode({ data }: NodeProps) {
       {/* Header: icon box + label */}
       <div className="flex items-center gap-2.5 mb-3">
         <div
-          className="w-10 h-10 rounded-[10px] flex items-center justify-center text-white shrink-0"
-          style={{ backgroundColor: d.color }}
+          className="w-10 h-10 flex items-center justify-center text-white shrink-0"
+          style={{
+            backgroundColor: d.color,
+            borderRadius: "12px 10px 12px 10px",
+          }}
         >
           <StemIcon k={d.stemKey} />
         </div>

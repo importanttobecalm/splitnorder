@@ -31,11 +31,11 @@ const edgeTypes: EdgeTypes = {
 };
 
 const NODE_POSITIONS: Record<string, { x: number; y: number }> = {
-  input: { x: 360, y: 220 },
-  vocals: { x: 700, y: 60 },
-  drums: { x: 700, y: 380 },
-  bass: { x: 20, y: 380 },
-  other: { x: 20, y: 60 },
+  input: { x: 320, y: 220 },
+  vocals: { x: 820, y: 60 },
+  drums: { x: 820, y: 380 },
+  bass: { x: 0, y: 380 },
+  other: { x: 0, y: 60 },
 };
 
 export default function StudioApp() {
