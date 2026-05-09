@@ -170,6 +170,14 @@ export default function RegisterPage() {
             />
             <span className="auth-input-icon">✉</span>
           </div>
+          {form.email.length > 0 && (
+            <div className="password-rules">
+              <span className={`password-rule ${isValidEmail(form.email) ? 'valid' : ''}`}>
+                <span className="password-rule-icon">{isValidEmail(form.email) ? '✓' : '○'}</span>
+                {isValidEmail(form.email) ? t('register.emailValid') : t('error.INVALID_EMAIL')}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="auth-field">
