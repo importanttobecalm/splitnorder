@@ -5,9 +5,13 @@ export default {
     extend: {
       colors: {
         canvas: {
-          DEFAULT: "#F4F1EC",
-          soft: "#FAF7F2",
-          line: "#E6E0D6",
+          DEFAULT: "#F4F8FB",
+          soft: "#FAFCFE",
+          line: "#E5EBF2",
+        },
+        accent: {
+          DEFAULT: "#4A90E2",
+          soft: "#E8F0FB",
         },
         ink: {
           DEFAULT: "#1F2230",

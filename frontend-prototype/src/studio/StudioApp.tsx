@@ -230,7 +230,7 @@ export default function StudioApp() {
               variant={BackgroundVariant.Dots}
               gap={24}
               size={1}
-              color="#D9D3C7"
+              color="#D5DEE8"
             />
           </ReactFlow>
         </ReactFlowProvider>

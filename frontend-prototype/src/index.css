@@ -14,7 +14,7 @@ body {
   color: #1f2230;
   background:
     radial-gradient(1200px 600px at 50% -10%, #ffffff 0%, transparent 60%),
-    linear-gradient(180deg, #faf7f2 0%, #f4f1ec 100%);
+    linear-gradient(180deg, #fafcfe 0%, #f4f8fb 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -45,8 +45,8 @@ input[type="range"].stem-volume {
     to right,
     var(--stem-color) 0%,
     var(--stem-color) var(--stem-pct, 80%),
-    #E6E0D6 var(--stem-pct, 80%),
-    #E6E0D6 100%
+    #E5EBF2 var(--stem-pct, 80%),
+    #E5EBF2 100%
   );
   outline: none;
   cursor: pointer;
