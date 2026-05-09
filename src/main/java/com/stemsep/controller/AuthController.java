@@ -150,6 +150,25 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        if (session != null) {
+            session.invalidate();
+        }
+        // React login sayfasına yönlendir (veya mevcut login yapınıza göre)
+        return "redirect:http://localhost:5173/login";
+    }
+
+    @GetMapping("/profile")
+    public String profile(HttpSession session, Map<String, Object> model) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:http://localhost:5173/login";
+        }
+        model.put("user", user);
+        return "profile";
+    }
+
     // ======================== EMAIL VERIFICATION ========================
 
     @GetMapping("/verify-email")

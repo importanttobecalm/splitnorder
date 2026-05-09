@@ -336,6 +336,13 @@
                 <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
                 <li class="nav-item"><a class="nav-link active" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
             </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
+                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
+                    </a>
+                </li>
+            </ul>
             <div class="lang-switch">
                 <a href="?lang=tr" class="lang-btn active">TR</a>
                 <a href="?lang=en" class="lang-btn">EN</a>
