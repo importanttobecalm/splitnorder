@@ -8,6 +8,7 @@ const authApi = {
     const res = await fetch(`${API_BASE_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ username, email, password, lang }),
     });
     return res.json();
@@ -20,6 +21,7 @@ const authApi = {
     const res = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
     return res.json();
@@ -31,7 +33,9 @@ const authApi = {
    * E-posta doğrulama
    */
   verifyEmail: async (token) => {
-    const res = await fetch(`${API_BASE_URL}/verify-email?token=${encodeURIComponent(token)}`);
+    const res = await fetch(`${API_BASE_URL}/verify-email?token=${encodeURIComponent(token)}`, {
+      credentials: 'include',
+    });
     return res.json();
   },
 
@@ -42,6 +46,7 @@ const authApi = {
     const res = await fetch(`${API_BASE_URL}/resend-verification`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email, lang }),
     });
     return res.json();

@@ -2,6 +2,7 @@ package com.stemsep.service;
 
 import com.stemsep.dao.JobDao;
 import com.stemsep.model.Job;
+import com.stemsep.model.User;
 import com.stemsep.model.JobStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,8 @@ public class JobService {
     private String uploadDirectory;
 
     @Transactional
-    public Job createJob(String sessionId, MultipartFile file, String model) throws IOException {
-        Path uploadDir = Paths.get(uploadDirectory);
+    public Job createJob(User user, MultipartFile file, String model) throws IOException {
+        Path uploadDir = Paths.get(uploadDirectory).toAbsolutePath();
         Files.createDirectories(uploadDir);
 
         String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
@@ -43,7 +44,7 @@ public class JobService {
         file.transferTo(filePath.toFile());
 
         Job job = new Job();
-        job.setSessionId(sessionId);
+        job.setUser(user);
         job.setOriginalFilename(file.getOriginalFilename());
         job.setOriginalFilePath(filePath.toString());
         job.setModelUsed(model);
@@ -70,8 +71,8 @@ public class JobService {
     }
 
     @Transactional(readOnly = true)
-    public List<Job> getJobsBySession(String sessionId) {
-        return jobDao.findBySessionId(sessionId);
+    public List<Job> getJobsByUser(Long userId) {
+        return jobDao.findByUserId(userId);
     }
 
     @Transactional

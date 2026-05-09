@@ -1,10 +1,12 @@
 package com.stemsep.controller;
 
 import com.stemsep.model.Job;
+import com.stemsep.model.User;
 import com.stemsep.model.Stem;
 import com.stemsep.service.JobService;
 import com.stemsep.service.StemService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +33,15 @@ public class JobController {
     private StemService stemService;
 
     @GetMapping("/{id}")
-    public String showJob(@PathVariable Long id, Model model) {
+    public String showJob(@PathVariable Long id, HttpSession session, Model model) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:http://localhost:5173/login";
+        }
+        
         Job job = jobService.getJob(id);
-        if (job == null) {
-            return "redirect:/";
+        if (job == null || !job.getUser().getId().equals(user.getId())) {
+            return "redirect:/history";
         }
 
         model.addAttribute("job", job);
@@ -55,12 +62,13 @@ public class JobController {
 
     @GetMapping("/{id}/status")
     @ResponseBody
-    public Map<String, Object> getJobStatus(@PathVariable Long id) {
+    public Map<String, Object> getJobStatus(@PathVariable Long id, HttpSession session) {
+        User user = (User) session.getAttribute("user");
         Job job = jobService.getJob(id);
         Map<String, Object> response = new HashMap<>();
 
-        if (job == null) {
-            response.put("error", "Job not found");
+        if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
+            response.put("error", "Job not found or access denied");
             return response;
         }
 
@@ -73,7 +81,15 @@ public class JobController {
 
     @GetMapping("/{id}/download/{stemType}")
     public void downloadStem(@PathVariable Long id, @PathVariable String stemType,
-                             HttpServletResponse response) throws IOException {
+                             HttpSession session, HttpServletResponse response) throws IOException {
+        User user = (User) session.getAttribute("user");
+        Job job = jobService.getJob(id);
+        
+        if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
+            response.sendError(403);
+            return;
+        }
+        
         Stem stem = stemService.getStemByJobAndType(id, stemType);
         if (stem == null || stem.getFilePath() == null) {
             response.sendError(404);
@@ -101,10 +117,12 @@ public class JobController {
     }
 
     @GetMapping("/{id}/download-all")
-    public void downloadAll(@PathVariable Long id, HttpServletResponse response) throws IOException {
+    public void downloadAll(@PathVariable Long id, HttpSession session, HttpServletResponse response) throws IOException {
+        User user = (User) session.getAttribute("user");
         Job job = jobService.getJob(id);
-        if (job == null) {
-            response.sendError(404);
+        
+        if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
+            response.sendError(403);
             return;
         }
 

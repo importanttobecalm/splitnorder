@@ -30,10 +30,10 @@ public class JobDao {
         getCurrentSession().merge(job);
     }
 
-    public List<Job> findBySessionId(String sessionId) {
+    public List<Job> findByUserId(Long userId) {
         return getCurrentSession()
-                .createQuery("FROM Job j WHERE j.sessionId = :sid ORDER BY j.createdAt DESC", Job.class)
-                .setParameter("sid", sessionId)
+                .createQuery("FROM Job j WHERE j.user.id = :uid ORDER BY j.createdAt DESC", Job.class)
+                .setParameter("uid", userId)
                 .getResultList();
     }
 

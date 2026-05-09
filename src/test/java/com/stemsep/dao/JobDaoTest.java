@@ -1,6 +1,7 @@
 package com.stemsep.dao;
 
 import com.stemsep.model.Job;
+import com.stemsep.model.User;
 import com.stemsep.model.JobStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -32,8 +33,11 @@ public class JobDaoTest {
 
     @Test
     public void testSaveJob() {
+        User user = new User();
+        user.setId(1L);
+        
         Job job = new Job();
-        job.setSessionId("sess123");
+        job.setUser(user);
         job.setOriginalFilename("music.mp3");
         job.setModelUsed("mdx_extra");
         job.setStatus(JobStatus.PENDING);

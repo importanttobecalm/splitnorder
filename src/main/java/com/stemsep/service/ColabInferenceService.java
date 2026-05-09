@@ -228,7 +228,7 @@ public class ColabInferenceService {
      * Flask API stem dosyalarını stems/{job_id}/ dizinine kaydeder.
      */
     private void createStemRecords(Job job) throws IOException {
-        Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId()));
+        Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId())).toAbsolutePath();
         Files.createDirectories(stemsDir);
 
         String[] stemTypes = {"vocals", "drums", "bass", "other"};

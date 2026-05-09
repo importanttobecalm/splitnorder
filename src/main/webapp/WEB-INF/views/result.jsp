@@ -296,7 +296,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="/">
+        <a class="navbar-brand" href="<c:url value='/' />">
             <i class="bi bi-soundwave"></i> AI StemSep
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -304,9 +304,9 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/upload"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/history"><spring:message code="nav.history"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
             </ul>
             <div class="lang-switch">
                 <a href="?lang=tr" class="lang-btn active">TR</a>
@@ -327,7 +327,7 @@
                 <div class="error-icon"><i class="bi bi-x-lg"></i></div>
                 <h2><spring:message code="result.error"/></h2>
                 <p>${error}</p>
-                <a href="/upload" class="btn-retry">
+                <a href="${pageContext.request.contextPath}/upload" class="btn-retry">
                     <i class="bi bi-arrow-repeat"></i> <spring:message code="home.hero.button"/>
                 </a>
             </div>
@@ -343,7 +343,7 @@
         <div class="result-container">
             <!-- Download All -->
             <div class="download-all">
-                <a href="/job/${job.id}/download-all" class="btn-download-all">
+                <a href="<c:url value='/job/${job.id}/download-all' />" class="btn-download-all">
                     <i class="bi bi-file-earmark-zip"></i> <spring:message code="result.download.all"/>
                 </a>
             </div>
@@ -354,10 +354,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.vocals"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/vocals" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/vocals" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/vocals" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/vocals" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -368,10 +368,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.drums"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/drums" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/drums" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/drums" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/drums" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -382,10 +382,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.bass"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/bass" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/bass" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/bass" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/bass" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -396,10 +396,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.other"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="/job/${job.id}/download/other" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/other" type="audio/wav">
                     </audio>
                 </div>
-                <a href="/job/${job.id}/download/other" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/other" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>

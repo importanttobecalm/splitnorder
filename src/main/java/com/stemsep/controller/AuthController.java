@@ -105,7 +105,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> body, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -124,6 +124,9 @@ public class AuthController {
             }
 
             User user = authService.loginLocal(email.trim().toLowerCase(), password);
+            
+            // Başarılı giriş - session oluştur (ÇOK ÖNEMLİ MANTIKSAL HATA DÜZELTMESİ)
+            session.setAttribute("user", user);
 
             response.put("success", true);
             response.put("user", buildUserResponse(user));
