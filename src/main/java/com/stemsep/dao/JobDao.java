@@ -36,18 +36,11 @@ public class JobDao {
         getCurrentSession().merge(job);
     }
 
-    public List<Job> findBySessionId(String sessionId) {
-        Session session = getCurrentSession();
-        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-        CriteriaQuery<Job> criteriaQuery = criteriaBuilder.createQuery(Job.class);
-        Root<Job> root = criteriaQuery.from(Job.class);
-
-        Predicate predicateSessionId = criteriaBuilder.equal(root.get("sessionId"), sessionId);
-        Order orderByCreatedAtDesc = criteriaBuilder.desc(root.get("createdAt"));
-        criteriaQuery.select(root).where(predicateSessionId).orderBy(orderByCreatedAtDesc);
-
-        Query<Job> query = session.createQuery(criteriaQuery);
-        return query.getResultList();
+    public List<Job> findByUserId(Long userId) {
+        return getCurrentSession()
+                .createQuery("FROM Job j WHERE j.user.id = :uid ORDER BY j.createdAt DESC", Job.class)
+                .setParameter("uid", userId)
+                .getResultList();
     }
 
     public List<Job> findAll() {

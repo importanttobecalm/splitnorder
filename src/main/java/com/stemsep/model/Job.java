@@ -13,8 +13,9 @@ public class Job {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "session_id", nullable = false)
-    private String sessionId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "original_filename", nullable = false)
     private String originalFilename;
@@ -50,8 +51,8 @@ public class Job {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public String getSessionId() { return sessionId; }
-    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
     public String getOriginalFilename() { return originalFilename; }
     public void setOriginalFilename(String originalFilename) { this.originalFilename = originalFilename; }

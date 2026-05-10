@@ -11,6 +11,9 @@ import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import java.util.List;
 
 @Repository
@@ -33,29 +36,41 @@ public class UserDao {
 
     public User findByUsername(String username) {
         Session session = getCurrentSession();
-        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-        CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
-        Root<User> root = criteriaQuery.from(User.class);
-
-        Predicate predicateUsername = criteriaBuilder.equal(root.get("username"), username);
-        criteriaQuery.select(root).where(predicateUsername);
-
-        Query<User> query = session.createQuery(criteriaQuery);
-        List<User> results = query.getResultList();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<User> cq = cb.createQuery(User.class);
+        Root<User> root = cq.from(User.class);
+        cq.select(root).where(cb.equal(root.get("username"), username));
+        List<User> results = session.createQuery(cq).getResultList();
         return results.isEmpty() ? null : results.get(0);
     }
 
     public User findByEmail(String email) {
         Session session = getCurrentSession();
-        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
-        CriteriaQuery<User> criteriaQuery = criteriaBuilder.createQuery(User.class);
-        Root<User> root = criteriaQuery.from(User.class);
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<User> cq = cb.createQuery(User.class);
+        Root<User> root = cq.from(User.class);
+        cq.select(root).where(cb.equal(root.get("email"), email));
+        List<User> results = session.createQuery(cq).getResultList();
+        return results.isEmpty() ? null : results.get(0);
+    }
 
-        Predicate predicateEmail = criteriaBuilder.equal(root.get("email"), email);
-        criteriaQuery.select(root).where(predicateEmail);
+    public User findByGoogleId(String googleId) {
+        Session session = getCurrentSession();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<User> cq = cb.createQuery(User.class);
+        Root<User> root = cq.from(User.class);
+        cq.select(root).where(cb.equal(root.get("googleId"), googleId));
+        List<User> results = session.createQuery(cq).getResultList();
+        return results.isEmpty() ? null : results.get(0);
+    }
 
-        Query<User> query = session.createQuery(criteriaQuery);
-        List<User> results = query.getResultList();
+    public User findByVerificationToken(String token) {
+        Session session = getCurrentSession();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<User> cq = cb.createQuery(User.class);
+        Root<User> root = cq.from(User.class);
+        cq.select(root).where(cb.equal(root.get("verificationToken"), token));
+        List<User> results = session.createQuery(cq).getResultList();
         return results.isEmpty() ? null : results.get(0);
     }
 

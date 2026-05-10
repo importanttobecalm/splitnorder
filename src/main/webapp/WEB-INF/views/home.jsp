@@ -2,7 +2,7 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
-<html lang="${pageContext.response.locale}">
+<html lang="${pageContext.request.locale}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -308,7 +308,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="/">
+        <a class="navbar-brand" href="<c:url value='/' />">
             <i class="bi bi-soundwave"></i> AI StemSep
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -317,13 +317,20 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="/"><spring:message code="nav.home"/></a>
+                    <a class="nav-link active" href="<c:url value='/' />"><spring:message code="nav.home"/></a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/upload"><spring:message code="nav.upload"/></a>
+                    <a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/history"><spring:message code="nav.history"/></a>
+                    <a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
+                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
+                    </a>
                 </li>
             </ul>
             <div class="lang-switch">
@@ -338,7 +345,7 @@
 <section class="hero">
     <h1><spring:message code="home.hero.title"/></h1>
     <p><spring:message code="home.hero.subtitle"/></p>
-    <a href="/upload" class="btn-glow">
+    <a href="<c:url value='/upload' />" class="btn-glow">
         <i class="bi bi-upload"></i> <spring:message code="home.hero.button"/>
     </a>
 
