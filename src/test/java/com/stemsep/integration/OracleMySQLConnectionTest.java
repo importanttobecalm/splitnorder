@@ -3,10 +3,10 @@ package com.stemsep.integration;
 import com.stemsep.config.HibernateConfig;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Sadece persistence katmanını bootstrap eder (WebConfig'i hariç tutar —
  * ServletContext istemesin diye).
  */
-@Ignore
+@Disabled("Canlı Oracle Cloud MySQL bastion tunnel ister; CI'da koşmaz.")
 public class OracleMySQLConnectionTest {
 
     @Configuration
