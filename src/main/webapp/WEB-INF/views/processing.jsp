@@ -2,7 +2,7 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
-<html lang="${pageContext.response.locale}">
+<html lang="${pageContext.request.locale}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -270,7 +270,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="/">
+        <a class="navbar-brand" href="<c:url value='/' />">
             <i class="bi bi-soundwave"></i> AI StemSep
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -278,9 +278,16 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/upload"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/history"><spring:message code="nav.history"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
+                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
+                    </a>
+                </li>
             </ul>
             <div class="lang-switch">
                 <a href="?lang=tr" class="lang-btn active">TR</a>
@@ -331,14 +338,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const jobId = ${job.id};
+    const jobId = '${job != null ? job.id : ""}';
+    if (!jobId) {
+        console.error("Job ID not found!");
+        window.location.href = '${pageContext.request.contextPath}/history';
+    }
 
     function pollStatus() {
-        fetch('/job/' + jobId + '/status')
+        const url = '<c:url value="/job/" />' + jobId + '/status';
+        fetch(url)
             .then(r => r.json())
             .then(data => {
                 if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-                    window.location.href = '/job/' + jobId;
+                    window.location.href = '<c:url value="/job/" />' + jobId;
                 }
             })
             .catch(() => {});

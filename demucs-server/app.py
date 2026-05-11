@@ -79,9 +79,10 @@ def run_demucs(file_path: str, model: str, job_id: int):
             str(file_path)
         ]
 
-        # İlk etapta 4 stem ayıralım (two-stems'i kaldır)
+        # Demucs komutunu wrapper üzerinden çalıştır (DLL hatalarını aşmak için)
+        wrapper_path = PROJECT_ROOT / "demucs-server" / "demucs_wrapper.py"
         cmd = [
-            sys.executable, "-m", "demucs",
+            sys.executable, str(wrapper_path),
             "--name", model,
             "--out", str(DEMUCS_OUTPUT_DIR),
             "--float32",
@@ -93,17 +94,29 @@ def run_demucs(file_path: str, model: str, job_id: int):
         jobs[job_id]["message"] = "Demucs başlatıldı, model yükleniyor..."
 
         # Demucs'u çalıştır
-        result = subprocess.run(
+        process = subprocess.Popen(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            timeout=1800  # 30 dakika timeout
+            bufsize=1,
+            universal_newlines=True
         )
 
-        if result.returncode != 0:
-            error_msg = result.stderr or "Bilinmeyen hata"
-            print(f"[JOB {job_id}] Demucs HATA: {error_msg}")
-            raise RuntimeError(f"Demucs hatası: {error_msg}")
+        # Çıktıları anlık olarak terminale yazdır
+        for line in process.stdout:
+            line = line.strip()
+            if line:
+                print(f"[JOB {job_id} DEMUCS] {line}")
+                # İlerlemeyi mesaj olarak kaydet
+                if "%" in line:
+                    jobs[job_id]["message"] = line
+
+        process.wait()
+
+        if process.returncode != 0:
+            print(f"[JOB {job_id}] Demucs HATA kodu: {process.returncode}")
+            raise RuntimeError(f"Demucs işlemi başarısız oldu (Kod: {process.returncode})")
 
         jobs[job_id]["progress"] = 80
         jobs[job_id]["message"] = "Stem dosyaları taşınıyor..."

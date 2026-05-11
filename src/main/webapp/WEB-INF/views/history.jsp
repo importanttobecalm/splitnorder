@@ -324,7 +324,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="/">
+        <a class="navbar-brand" href="<c:url value='/' />">
             <i class="bi bi-soundwave"></i> AI StemSep
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -332,9 +332,16 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/upload"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link active" href="/history"><spring:message code="nav.history"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
+                <li class="nav-item"><a class="nav-link active" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
+                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
+                    </a>
+                </li>
             </ul>
             <div class="lang-switch">
                 <a href="?lang=tr" class="lang-btn active">TR</a>
@@ -357,7 +364,7 @@
                 <div class="empty-state">
                     <div class="empty-icon"><i class="bi bi-clock-history"></i></div>
                     <p><spring:message code="history.empty"/></p>
-                    <a href="/upload" class="btn-upload-link">
+                    <a href="${pageContext.request.contextPath}/upload" class="btn-upload-link">
                         <i class="bi bi-upload"></i> <spring:message code="nav.upload"/>
                     </a>
                 </div>
@@ -402,9 +409,16 @@
                                             </c:when>
                                         </c:choose>
                                     </td>
-                                    <td>${fn:substring(job.createdAt.toString(), 0, 16)}</td>
                                     <td>
-                                        <a href="/job/${job.id}" class="btn-view">
+                                        <c:choose>
+                                            <c:when test="${not empty job.createdAt}">
+                                                ${fn:substring(job.createdAt.toString(), 0, 16)}
+                                            </c:when>
+                                            <c:otherwise>-</c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        <a href="${pageContext.request.contextPath}/job/${job.id}" class="btn-view">
                                             <i class="bi bi-eye"></i> <spring:message code="history.view"/>
                                         </a>
                                     </td>

@@ -2,6 +2,7 @@ package com.stemsep.service;
 
 import com.stemsep.dao.JobDao;
 import com.stemsep.model.Job;
+import com.stemsep.model.User;
 import com.stemsep.model.JobStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,41 +35,23 @@ public class JobService {
     private String uploadDirectory;
 
     @Transactional
-    public Job createJob(String sessionId, MultipartFile file, String model) throws IOException {
-        Path uploadDir = Paths.get(uploadDirectory).toAbsolutePath().normalize();
-        logger.info("[UPLOAD-1] cwd={}, uploadDir={}, exists={}",
-            Paths.get("").toAbsolutePath(), uploadDir, Files.exists(uploadDir));
+    public Job createJob(User user, MultipartFile file, String model) throws IOException {
+        Path uploadDir = Paths.get(uploadDirectory).toAbsolutePath();
         Files.createDirectories(uploadDir);
-        logger.info("[UPLOAD-2] uploadDir created/verified: writable={}", Files.isWritable(uploadDir));
 
-        String safeName = file.getOriginalFilename() == null ? "audio" : file.getOriginalFilename();
-        String filename = System.currentTimeMillis() + "_" + safeName;
-        Path filePath = uploadDir.resolve(filename).toAbsolutePath().normalize();
-        logger.info("[UPLOAD-3] target absolute path={}, originalSize={} bytes",
-            filePath, file.getSize());
-
-        try {
-            file.transferTo(filePath.toFile());
-        } catch (IOException e) {
-            logger.error("[UPLOAD-FAIL] transferTo failed for {}: {}", filePath, e.toString());
-            // Spring/Tomcat fallback: stream copy directly
-            try (var in = file.getInputStream()) {
-                Files.copy(in, filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                logger.info("[UPLOAD-3b] stream-copy fallback succeeded");
-            }
-        }
-        logger.info("[UPLOAD-4] saved {} bytes to {}",
-            Files.size(filePath), filePath);
+        String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        Path filePath = uploadDir.resolve(filename);
+        file.transferTo(filePath.toFile());
 
         Job job = new Job();
-        job.setSessionId(sessionId);
+        job.setUser(user);
         job.setOriginalFilename(file.getOriginalFilename());
         job.setOriginalFilePath(filePath.toString());
         job.setModelUsed(model);
         job.setStatus(JobStatus.PENDING);
 
         jobDao.save(job);
-        logger.info("[UPLOAD-5] Job created: id={}, file={}, model={}", job.getId(), file.getOriginalFilename(), model);
+        logger.info("Job created: id={}, file={}, model={}", job.getId(), file.getOriginalFilename(), model);
 
         return job;
     }
@@ -88,8 +71,8 @@ public class JobService {
     }
 
     @Transactional(readOnly = true)
-    public List<Job> getJobsBySession(String sessionId) {
-        return jobDao.findBySessionId(sessionId);
+    public List<Job> getJobsByUser(Long userId) {
+        return jobDao.findByUserId(userId);
     }
 
     @Transactional

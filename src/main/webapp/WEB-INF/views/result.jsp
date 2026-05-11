@@ -12,17 +12,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #e8d8b0;
-            --primary-light: #f5e9c7;
-            --primary-dark: #c4b289;
-            --accent: #c4a875;
-            --bg-dark: #0a0908;
-            --bg-card: #14120f;
-            --bg-card-hover: #1c1916;
-            --text-primary: #f0ebe0;
-            --text-secondary: #8a8378;
-            --gradient-1: linear-gradient(135deg, #e8d8b0, #c4a875);
-            --glow: 0 0 40px rgba(232, 216, 176, 0.18);
+            --primary: #7c3aed;
+            --primary-light: #a78bfa;
+            --primary-dark: #5b21b6;
+            --accent: #06b6d4;
+            --bg-dark: #0f0f23;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #25254a;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --gradient-1: linear-gradient(135deg, #7c3aed, #06b6d4);
+            --glow: 0 0 40px rgba(124, 58, 237, 0.3);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -40,16 +40,16 @@
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background:
-                radial-gradient(circle at 20% 50%, rgba(232, 216, 176,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(196, 168, 117,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(232, 216, 176,0.05) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(124,58,237,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(6,182,212,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(124,58,237,0.05) 0%, transparent 50%);
             z-index: -1;
         }
 
         .navbar {
-            background: rgba(10, 9, 8, 0.8) !important;
+            background: rgba(15, 15, 35, 0.8) !important;
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(232, 216, 176,0.2);
+            border-bottom: 1px solid rgba(124,58,237,0.2);
             padding: 1rem 0;
         }
 
@@ -147,14 +147,14 @@
 
         .btn-download-all:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0 60px rgba(232, 216, 176,0.5);
+            box-shadow: 0 0 60px rgba(124,58,237,0.5);
             color: white;
         }
 
         /* Stem cards */
         .stem-card {
             background: var(--bg-card);
-            border: 1px solid rgba(232, 216, 176,0.15);
+            border: 1px solid rgba(124,58,237,0.15);
             border-radius: 16px;
             padding: 1.5rem;
             margin-bottom: 1rem;
@@ -165,7 +165,7 @@
         }
 
         .stem-card:hover {
-            border-color: rgba(232, 216, 176,0.4);
+            border-color: rgba(124,58,237,0.4);
             background: var(--bg-card-hover);
         }
 
@@ -178,27 +178,15 @@
             justify-content: center;
             font-size: 1.5rem;
             flex-shrink: 0;
-            background: linear-gradient(135deg, rgba(232,216,176,0.12), rgba(196,168,117,0.08));
-            border: 1px solid rgba(232,216,176,0.18);
-            color: var(--primary-light);
         }
 
-        /* Aynı luxe paletinde her stem için hafif tonlama farkı (overuse edilmiş gradient'lere son) */
-        .stem-icon.vocals { color: #f5e9c7; }
-        .stem-icon.drums  { color: #e8d8b0; }
-        .stem-icon.bass   { color: #d4c19a; }
-        .stem-icon.other  { color: #c4b289; }
+        .stem-icon.vocals { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+        .stem-icon.drums { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+        .stem-icon.bass { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+        .stem-icon.other { background: linear-gradient(135deg, #10b981, #06b6d4); }
 
-        .stem-info { flex: 1; min-width: 0; }
-        .stem-name {
-            font-weight: 700;
-            font-size: 1.15rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--primary-light);
-            margin-bottom: 0.5rem;
-            line-height: 1.2;
-        }
+        .stem-info { flex: 1; }
+        .stem-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.25rem; }
 
         /* Audio player */
         .stem-player {
@@ -219,7 +207,7 @@
             width: 44px;
             height: 44px;
             border-radius: 12px;
-            border: 1px solid rgba(232, 216, 176,0.3);
+            border: 1px solid rgba(124,58,237,0.3);
             background: transparent;
             color: var(--primary-light);
             font-size: 1.2rem;
@@ -250,7 +238,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: rgba(220,90,80,0.15);
+            background: rgba(239,68,68,0.15);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -293,7 +281,7 @@
             padding: 2rem;
             color: var(--text-secondary);
             font-size: 0.85rem;
-            border-top: 1px solid rgba(232, 216, 176,0.1);
+            border-top: 1px solid rgba(124,58,237,0.1);
             margin-top: 4rem;
         }
 
@@ -308,7 +296,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="/">
+        <a class="navbar-brand" href="<c:url value='/' />">
             <i class="bi bi-soundwave"></i> AI StemSep
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -316,9 +304,16 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/upload"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/history"><spring:message code="nav.history"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
+                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
+                    </a>
+                </li>
             </ul>
             <div class="lang-switch">
                 <a href="?lang=tr" class="lang-btn active">TR</a>
@@ -339,7 +334,7 @@
                 <div class="error-icon"><i class="bi bi-x-lg"></i></div>
                 <h2><spring:message code="result.error"/></h2>
                 <p>${error}</p>
-                <a href="/upload" class="btn-retry">
+                <a href="${pageContext.request.contextPath}/upload" class="btn-retry">
                     <i class="bi bi-arrow-repeat"></i> <spring:message code="home.hero.button"/>
                 </a>
             </div>
@@ -355,7 +350,7 @@
         <div class="result-container">
             <!-- Download All -->
             <div class="download-all">
-                <a href="/job/${job.id}/download-all" class="btn-download-all">
+                <a href="<c:url value='/job/${job.id}/download-all' />" class="btn-download-all">
                     <i class="bi bi-file-earmark-zip"></i> <spring:message code="result.download.all"/>
                 </a>
             </div>
@@ -366,10 +361,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.vocals"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="${stemUrls.vocals}" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/vocals" type="audio/wav">
                     </audio>
                 </div>
-                <a href="${stemUrls.vocals}" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/vocals" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -380,10 +375,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.drums"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="${stemUrls.drums}" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/drums" type="audio/wav">
                     </audio>
                 </div>
-                <a href="${stemUrls.drums}" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/drums" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -394,10 +389,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.bass"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="${stemUrls.bass}" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/bass" type="audio/wav">
                     </audio>
                 </div>
-                <a href="${stemUrls.bass}" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/bass" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
@@ -408,10 +403,10 @@
                 <div class="stem-info">
                     <div class="stem-name"><spring:message code="result.stem.other"/></div>
                     <audio class="stem-player" controls preload="none">
-                        <source src="${stemUrls.other}" type="audio/wav">
+                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/other" type="audio/wav">
                     </audio>
                 </div>
-                <a href="${stemUrls.other}" class="btn-stem-download" title="<spring:message code='result.download'/>">
+                <a href="${pageContext.request.contextPath}/job/${job.id}/download/other" class="btn-stem-download" title="<spring:message code='result.download'/>">
                     <i class="bi bi-download"></i>
                 </a>
             </div>
