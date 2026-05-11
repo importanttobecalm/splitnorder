@@ -7,22 +7,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public class RequestLoggingInterceptor implements HandlerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestLoggingInterceptor.class);
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        long startTime = System.currentTimeMillis();
-        request.setAttribute("startTime", startTime);
-
-        logger.info("[REQUEST] {} {} | Params: {} | Session: {} | IP: {}",
+        request.setAttribute("startTime", System.currentTimeMillis());
+        logger.info("[REQUEST] {} {} | params={} | ip={}",
                 request.getMethod(),
                 request.getRequestURI(),
-                request.getQueryString() != null ? request.getQueryString() : "-",
-                request.getSession().getId().substring(0, 8) + "...",
+                formatParams(request.getParameterMap()),
                 request.getRemoteAddr());
-
         return true;
     }
 
@@ -30,27 +29,41 @@ public class RequestLoggingInterceptor implements HandlerInterceptor {
     public void postHandle(HttpServletRequest request, HttpServletResponse response,
                            Object handler, ModelAndView modelAndView) {
         if (modelAndView != null) {
-            logger.debug("[VIEW] {} → {}", request.getRequestURI(), modelAndView.getViewName());
+            logger.info("[VIEW] {} → view={} | model={}",
+                    request.getRequestURI(),
+                    modelAndView.getViewName(),
+                    modelAndView.getModel());
         }
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
                                 Object handler, Exception ex) {
-        long startTime = (Long) request.getAttribute("startTime");
-        long duration = System.currentTimeMillis() - startTime;
-
-        logger.info("[RESPONSE] {} {} | Status: {} | Duration: {}ms",
+        Object start = request.getAttribute("startTime");
+        long duration = start != null ? System.currentTimeMillis() - (Long) start : -1L;
+        logger.info("[RESPONSE] {} {} | status={} | duration={}ms",
                 request.getMethod(),
                 request.getRequestURI(),
                 response.getStatus(),
                 duration);
-
         if (ex != null) {
-            logger.error("[ERROR] {} {} | Exception: {}",
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    ex.getMessage());
+            logger.error("[ERROR] {} {} | exception={}",
+                    request.getMethod(), request.getRequestURI(), ex.toString());
         }
+    }
+
+    private String formatParams(Map<String, String[]> params) {
+        if (params.isEmpty()) return "{}";
+        return params.entrySet().stream()
+                .map(e -> e.getKey() + "=" + mask(e.getKey(), e.getValue()))
+                .collect(Collectors.joining(", ", "{", "}"));
+    }
+
+    private String mask(String key, String[] values) {
+        String lower = key.toLowerCase();
+        if (lower.contains("password") || lower.contains("token") || lower.contains("secret")) {
+            return "***";
+        }
+        return values.length == 1 ? values[0] : String.join(",", values);
     }
 }

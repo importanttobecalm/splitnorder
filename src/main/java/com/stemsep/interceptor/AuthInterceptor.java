@@ -10,11 +10,11 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String path = request.getRequestURI();
-        
-        // Statik kaynaklar ve API auth endpointleri için geçişe izin ver
-        if (path.startsWith(request.getContextPath() + "/static/") ||
-            path.startsWith(request.getContextPath() + "/api/auth/") ||
-            path.startsWith(request.getContextPath() + "/auth/")) {
+        String ctx = request.getContextPath();
+
+        if (path.startsWith(ctx + "/static/")
+                || path.startsWith(ctx + "/auth/")
+                || path.startsWith(ctx + "/api/auth/")) {
             return true;
         }
 
@@ -23,8 +23,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        // Giriş yapılmamışsa React login sayfasına yönlendir
-        response.sendRedirect("http://localhost:5173/login");
+        response.sendRedirect(ctx + "/auth/login");
         return false;
     }
 }
