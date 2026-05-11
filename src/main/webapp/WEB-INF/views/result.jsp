@@ -1,424 +1,109 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<!DOCTYPE html>
-<html lang="${pageContext.response.locale}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><spring:message code="result.title"/> - <spring:message code="app.title"/></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #7c3aed;
-            --primary-light: #a78bfa;
-            --primary-dark: #5b21b6;
-            --accent: #06b6d4;
-            --bg-dark: #0f0f23;
-            --bg-card: #1a1a2e;
-            --bg-card-hover: #25254a;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --gradient-1: linear-gradient(135deg, #7c3aed, #06b6d4);
-            --glow: 0 0 40px rgba(124, 58, 237, 0.3);
-        }
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<jsp:include page="/WEB-INF/views/layout/head.jsp">
+  <jsp:param name="titleKey" value="studio.title" />
+</jsp:include>
+<jsp:include page="/WEB-INF/views/layout/nav.jsp" />
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<style>
+  .stem-card { background: rgb(var(--card-rgb, 255 255 255) / 0.95); border-radius: 16px; box-shadow: 0 4px 24px rgba(30,50,90,0.06); border: 1px solid rgba(193,199,211,0.3); }
+  .waveform-bar { width: 4px; min-height: 2px; border-radius: 2px; }
+</style>
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+<main class="max-w-[1240px] mx-auto px-margin_mobile md:px-margin_desktop pt-8 pb-32">
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background:
-                radial-gradient(circle at 20% 50%, rgba(124,58,237,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(6,182,212,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(124,58,237,0.05) 0%, transparent 50%);
-            z-index: -1;
-        }
-
-        .navbar {
-            background: rgba(15, 15, 35, 0.8) !important;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(124,58,237,0.2);
-            padding: 1rem 0;
-        }
-
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.5rem;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-link {
-            color: var(--text-secondary) !important;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .nav-link:hover { color: var(--primary-light) !important; }
-
-        .lang-switch {
-            display: flex;
-            gap: 0.25rem;
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 2px;
-        }
-
-        .lang-btn {
-            padding: 4px 12px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-        }
-
-        .lang-btn.active, .lang-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .page-header {
-            text-align: center;
-            padding: 4rem 2rem 2rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        /* Result card */
-        .result-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        /* Download all */
-        .download-all {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2rem;
-        }
-
-        .btn-download-all {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.85rem 2rem;
-            background: var(--gradient-1);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            box-shadow: var(--glow);
-        }
-
-        .btn-download-all:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 60px rgba(124,58,237,0.5);
-            color: white;
-        }
-
-        /* Stem cards */
-        .stem-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(124,58,237,0.15);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-            transition: all 0.3s;
-        }
-
-        .stem-card:hover {
-            border-color: rgba(124,58,237,0.4);
-            background: var(--bg-card-hover);
-        }
-
-        .stem-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
-
-        .stem-icon.vocals { background: linear-gradient(135deg, #ec4899, #f43f5e); }
-        .stem-icon.drums { background: linear-gradient(135deg, #f59e0b, #ef4444); }
-        .stem-icon.bass { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
-        .stem-icon.other { background: linear-gradient(135deg, #10b981, #06b6d4); }
-
-        .stem-info { flex: 1; }
-        .stem-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.25rem; }
-
-        /* Audio player */
-        .stem-player {
-            width: 100%;
-            height: 36px;
-            border-radius: 8px;
-            outline: none;
-        }
-
-        .stem-player::-webkit-media-controls-panel {
-            background: var(--bg-card-hover);
-        }
-
-        .btn-stem-download {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            border: 1px solid rgba(124,58,237,0.3);
-            background: transparent;
-            color: var(--primary-light);
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            flex-shrink: 0;
-        }
-
-        .btn-stem-download:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* Error state */
-        .error-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(239,68,68,0.3);
-            border-radius: 20px;
-            padding: 3rem;
-            text-align: center;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .error-card .error-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(239,68,68,0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            color: #f87171;
-            margin: 0 auto 1.5rem;
-        }
-
-        .error-card h2 {
-            color: #f87171;
-            margin-bottom: 0.5rem;
-        }
-
-        .error-card p {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-        }
-
-        .btn-retry {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.75rem;
-            background: transparent;
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            color: var(--primary-light);
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .btn-retry:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            border-top: 1px solid rgba(124,58,237,0.1);
-            margin-top: 4rem;
-        }
-
-        @media (max-width: 576px) {
-            .stem-card { flex-wrap: wrap; }
-            .page-header h1 { font-size: 1.8rem; }
-        }
-    </style>
-</head>
-<body>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg sticky-top">
-    <div class="container">
-        <a class="navbar-brand" href="<c:url value='/' />">
-            <i class="bi bi-soundwave"></i> AI StemSep
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
-            </ul>
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item">
-                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
-                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
-                    </a>
-                </li>
-            </ul>
-            <div class="lang-switch">
-                <a href="?lang=tr" class="lang-btn active">TR</a>
-                <a href="?lang=en" class="lang-btn">EN</a>
-            </div>
-        </div>
+  <%-- Üst başlık --%>
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-inverse-primary shadow-sm flex items-center justify-center text-on-primary">
+        <span class="material-symbols-outlined text-[28px]">graphic_eq</span>
+      </div>
+      <div>
+        <h1 class="font-headline-md text-headline-md text-on-surface mb-1">${job.originalFilename}</h1>
+        <p class="font-mono-label text-mono-label text-on-surface-variant uppercase">${job.modelUsed} · <fmt:formatDate value="${job.createdAtDate}" type="both" dateStyle="short" timeStyle="short" /></p>
+      </div>
     </div>
-</nav>
+    <a href="${ctx}/job/${job.id}/download-all" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2 shadow-sm">
+      <span class="material-symbols-outlined">download</span>
+      <fmt:message key="studio.downloadAll" />
+    </a>
+  </div>
 
-<c:choose>
-    <c:when test="${job.status == 'FAILED'}">
-        <!-- Error State -->
-        <section class="page-header">
-            <h1><spring:message code="result.failed"/></h1>
-        </section>
-        <div class="container">
-            <div class="error-card">
-                <div class="error-icon"><i class="bi bi-x-lg"></i></div>
-                <h2><spring:message code="result.error"/></h2>
-                <p>${error}</p>
-                <a href="${pageContext.request.contextPath}/upload" class="btn-retry">
-                    <i class="bi bi-arrow-repeat"></i> <spring:message code="home.hero.button"/>
-                </a>
-            </div>
+  <%-- 4 stem kart (grid layout — Stitch'in absolute konumuna karşılık) --%>
+  <c:set var="stemList" value="vocals,drums,bass,other" />
+  <c:set var="stemColors" value="#E53935,#FB8C00,#5E35B1,#00897B" />
+  <c:set var="stemIcons" value="mic,radio,graphic_eq,music_note" />
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-12">
+    <c:forEach var="stem" items="${stemList}" varStatus="loop">
+      <c:set var="color" value="${stemColors.split(',')[loop.index]}" />
+      <c:set var="icon" value="${stemIcons.split(',')[loop.index]}" />
+
+      <div class="stem-card p-6 flex flex-col gap-4" style="border-left: 4px solid ${color};">
+        <div class="flex justify-between items-start">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined" style="color: ${color};">${icon}</span>
+            <h3 class="font-headline-sm text-[20px] text-on-surface uppercase font-bold"><fmt:message key="stem.${stem}" /></h3>
+          </div>
+          <div class="flex gap-2">
+            <button title="Solo" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">S</button>
+            <button title="Mute" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">M</button>
+            <a href="${ctx}/job/${job.id}/download/${stem}" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant hover:bg-surface-dim transition-colors flex items-center justify-center">
+              <span class="material-symbols-outlined text-[18px]">download</span>
+            </a>
+          </div>
         </div>
-    </c:when>
-    <c:otherwise>
-        <!-- Success State -->
-        <section class="page-header">
-            <h1><spring:message code="result.title"/></h1>
-            <p><spring:message code="result.subtitle"/> - ${job.originalFilename}</p>
-        </section>
 
-        <div class="result-container">
-            <!-- Download All -->
-            <div class="download-all">
-                <a href="<c:url value='/job/${job.id}/download-all' />" class="btn-download-all">
-                    <i class="bi bi-file-earmark-zip"></i> <spring:message code="result.download.all"/>
-                </a>
-            </div>
-
-            <!-- Vocals -->
-            <div class="stem-card">
-                <div class="stem-icon vocals"><i class="bi bi-mic"></i></div>
-                <div class="stem-info">
-                    <div class="stem-name"><spring:message code="result.stem.vocals"/></div>
-                    <audio class="stem-player" controls preload="none">
-                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/vocals" type="audio/wav">
-                    </audio>
-                </div>
-                <a href="${pageContext.request.contextPath}/job/${job.id}/download/vocals" class="btn-stem-download" title="<spring:message code='result.download'/>">
-                    <i class="bi bi-download"></i>
-                </a>
-            </div>
-
-            <!-- Drums -->
-            <div class="stem-card">
-                <div class="stem-icon drums"><i class="bi bi-disc"></i></div>
-                <div class="stem-info">
-                    <div class="stem-name"><spring:message code="result.stem.drums"/></div>
-                    <audio class="stem-player" controls preload="none">
-                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/drums" type="audio/wav">
-                    </audio>
-                </div>
-                <a href="${pageContext.request.contextPath}/job/${job.id}/download/drums" class="btn-stem-download" title="<spring:message code='result.download'/>">
-                    <i class="bi bi-download"></i>
-                </a>
-            </div>
-
-            <!-- Bass -->
-            <div class="stem-card">
-                <div class="stem-icon bass"><i class="bi bi-badge-8k"></i></div>
-                <div class="stem-info">
-                    <div class="stem-name"><spring:message code="result.stem.bass"/></div>
-                    <audio class="stem-player" controls preload="none">
-                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/bass" type="audio/wav">
-                    </audio>
-                </div>
-                <a href="${pageContext.request.contextPath}/job/${job.id}/download/bass" class="btn-stem-download" title="<spring:message code='result.download'/>">
-                    <i class="bi bi-download"></i>
-                </a>
-            </div>
-
-            <!-- Other -->
-            <div class="stem-card">
-                <div class="stem-icon other"><i class="bi bi-music-note-list"></i></div>
-                <div class="stem-info">
-                    <div class="stem-name"><spring:message code="result.stem.other"/></div>
-                    <audio class="stem-player" controls preload="none">
-                        <source src="${pageContext.request.contextPath}/job/${job.id}/download/other" type="audio/wav">
-                    </audio>
-                </div>
-                <a href="${pageContext.request.contextPath}/job/${job.id}/download/other" class="btn-stem-download" title="<spring:message code='result.download'/>">
-                    <i class="bi bi-download"></i>
-                </a>
-            </div>
+        <%-- Waveform mock (gerçekte ${stem}.peaks.json'dan render edilir) --%>
+        <div class="h-16 flex items-end justify-between w-full gap-[1px]">
+          <c:forEach var="h" items="${[20,40,30,60,80,50,70,90,100,60,40,30,50,20,10,30,20,10,40,60,80,50,70,90,100,60,40,30,50,20,10,30]}">
+            <div class="waveform-bar" style="height: ${h}%; background-color: ${color};"></div>
+          </c:forEach>
         </div>
-    </c:otherwise>
-</c:choose>
 
-<!-- Footer -->
-<footer class="footer">
-    <spring:message code="footer.text"/>
-</footer>
+        <%-- Volume slider --%>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-outline text-[16px]">volume_up</span>
+          <input type="range" min="0" max="100" value="80" class="w-full h-1 bg-surface-variant rounded-full appearance-none" style="accent-color: ${color};">
+        </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        <%-- HTML5 audio (gerçek dosya bağlı) --%>
+        <audio controls class="w-full mt-2">
+          <source src="${ctx}/job/${job.id}/stream/${stem}" type="audio/wav">
+        </audio>
+      </div>
+    </c:forEach>
+  </div>
+
+  <%-- Orijinal master --%>
+  <div class="bg-surface-container-lowest rounded-xl soft-shadow p-6 mb-12">
+    <div class="flex items-center gap-4">
+      <div class="w-16 h-16 rounded-lg bg-gradient-to-br from-primary-container to-primary flex items-center justify-center text-on-primary">
+        <span class="material-symbols-outlined text-[28px]">album</span>
+      </div>
+      <div class="flex-1">
+        <h2 class="font-headline-sm text-[18px] text-on-surface mb-1"><fmt:message key="studio.master" /></h2>
+        <p class="font-mono-numeric text-on-surface-variant">${job.originalFilename}</p>
+      </div>
+    </div>
+    <audio controls class="w-full mt-4">
+      <source src="${ctx}/job/${job.id}/stream/original" type="audio/mpeg">
+    </audio>
+  </div>
+
+  <%-- Tekrar ayrıştır / Geçmişe dön --%>
+  <div class="flex flex-col sm:flex-row gap-4 justify-center">
+    <a href="${ctx}/upload" class="bg-surface-container-lowest border border-primary text-primary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-primary-fixed/20 transition-colors inline-flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined">upload_file</span>
+      <fmt:message key="studio.uploadNew" />
+    </a>
+    <a href="${ctx}/history" class="bg-surface-container-lowest border border-outline-variant text-on-surface-variant px-6 py-3 rounded-xl font-body-md font-medium hover:bg-surface-container-low transition-colors inline-flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined">history</span>
+      <fmt:message key="nav.history" />
+    </a>
+  </div>
+</main>
+
+<jsp:include page="/WEB-INF/views/layout/site-footer.jsp" />
+<jsp:include page="/WEB-INF/views/layout/footer.jsp" />

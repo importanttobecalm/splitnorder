@@ -1,494 +1,111 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<!DOCTYPE html>
-<html lang="${pageContext.response.locale}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><spring:message code="upload.title"/> - <spring:message code="app.title"/></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #e8d8b0;
-            --primary-light: #f5e9c7;
-            --primary-dark: #c4b289;
-            --accent: #c4a875;
-            --bg-dark: #0a0908;
-            --bg-card: #14120f;
-            --bg-card-hover: #1c1916;
-            --text-primary: #f0ebe0;
-            --text-secondary: #8a8378;
-            --gradient-1: linear-gradient(135deg, #e8d8b0, #c4a875);
-            --gradient-2: linear-gradient(135deg, #14120f, #1c1916);
-            --glow: 0 0 40px rgba(232, 216, 176, 0.18);
-        }
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<jsp:include page="/WEB-INF/views/layout/head.jsp">
+  <jsp:param name="titleKey" value="upload.title" />
+</jsp:include>
+<c:set var="navActive" value="upload" scope="request" />
+<jsp:include page="/WEB-INF/views/layout/nav.jsp" />
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<%-- ViewState: empty | selected --%>
+<c:set var="state" value="${empty selectedFile ? 'empty' : 'selected'}" />
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+<main class="flex-grow pt-8 pb-16 px-4 flex flex-col items-center">
+  <div class="text-center mb-12 max-w-2xl mx-auto">
+    <h1 class="text-[40px] font-headline-md font-bold text-on-surface mb-4"><fmt:message key="upload.title" /></h1>
+    <p class="text-[16px] font-body-md text-on-surface-variant"><fmt:message key="upload.subtitle" /></p>
+  </div>
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background:
-                radial-gradient(circle at 20% 50%, rgba(232, 216, 176,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(196, 168, 117,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(232, 216, 176,0.05) 0%, transparent 50%);
-            z-index: -1;
-        }
+  <c:if test="${not empty error}">
+    <div class="w-full max-w-[920px] mb-6 p-4 rounded-xl bg-error-container text-on-error-container font-body-sm">
+      <fmt:message key="upload.error.${error}" />
+    </div>
+  </c:if>
 
-        .navbar {
-            background: rgba(10, 9, 8, 0.8) !important;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(232, 216, 176,0.2);
-            padding: 1rem 0;
-        }
+  <form id="uploadForm" method="post" action="${ctx}/upload" enctype="multipart/form-data" class="w-full max-w-[920px]">
 
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.5rem;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-link {
-            color: var(--text-secondary) !important;
-            font-weight: 500;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: var(--primary-light) !important;
-        }
-
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: var(--gradient-1);
-            transition: all 0.3s;
-            transform: translateX(-50%);
-        }
-
-        .nav-link:hover::after { width: 80%; }
-
-        .lang-switch {
-            display: flex;
-            gap: 0.25rem;
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 2px;
-        }
-
-        .lang-btn {
-            padding: 4px 12px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-        }
-
-        .lang-btn.active, .lang-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .page-header {
-            text-align: center;
-            padding: 4rem 2rem 2rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        /* Upload area */
-        .upload-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(232, 216, 176,0.15);
-            border-radius: 20px;
-            padding: 2.5rem;
-            max-width: 640px;
-            margin: 0 auto;
-        }
-
-        .dropzone {
-            border: 2px dashed rgba(232, 216, 176,0.4);
-            border-radius: 16px;
-            padding: 3rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: rgba(232, 216, 176,0.05);
-        }
-
-        .dropzone:hover, .dropzone.drag-over {
-            border-color: var(--primary);
-            background: rgba(232, 216, 176,0.12);
-            box-shadow: var(--glow);
-        }
-
-        .dropzone .icon {
-            font-size: 3rem;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1rem;
-        }
-
-        .dropzone p {
-            color: var(--text-secondary);
-            margin-bottom: 0.5rem;
-        }
-
-        .dropzone .formats {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            opacity: 0.7;
-        }
-
-        .file-info {
-            display: none;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: rgba(232, 216, 176,0.1);
-            border-radius: 12px;
-            margin-top: 1rem;
-        }
-
-        .file-info.show { display: flex; }
-
-        .file-info .fi-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: var(--gradient-1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            flex-shrink: 0;
-        }
-
-        .file-info .fi-details { flex: 1; }
-        .file-info .fi-name { font-weight: 600; font-size: 0.95rem; }
-        .file-info .fi-size { font-size: 0.8rem; color: var(--text-secondary); }
-
-        .file-info .fi-remove {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            transition: color 0.3s;
-        }
-
-        .file-info .fi-remove:hover { color: #ef4444; }
-
-        /* Model select */
-        .model-section {
-            margin-top: 2rem;
-        }
-
-        .model-section label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-
-        .model-options {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .model-option {
-            flex: 1;
-            padding: 1.25rem;
-            border: 2px solid rgba(232, 216, 176,0.2);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-            background: transparent;
-        }
-
-        .model-option:hover {
-            border-color: rgba(232, 216, 176,0.5);
-            background: rgba(232, 216, 176,0.05);
-        }
-
-        .model-option.selected {
-            border-color: var(--primary);
-            background: rgba(232, 216, 176,0.15);
-            box-shadow: 0 0 20px rgba(232, 216, 176,0.2);
-        }
-
-        .model-option input { display: none; }
-
-        .model-option .mo-name {
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .model-option .mo-desc {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        /* Submit */
-        .btn-submit {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 1rem;
-            margin-top: 2rem;
-            background: var(--gradient-1);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: var(--glow);
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 60px rgba(232, 216, 176,0.5);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Alert */
-        .alert-error {
-            background: rgba(220,90,80,0.15);
-            border: 1px solid rgba(239,68,68,0.3);
-            color: #fca5a5;
-            border-radius: 12px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            border-top: 1px solid rgba(232, 216, 176,0.1);
-            margin-top: 4rem;
-        }
-
-        @media (max-width: 576px) {
-            .model-options { flex-direction: column; }
-            .page-header h1 { font-size: 1.8rem; }
-        }
-    </style>
-</head>
-<body>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg sticky-top">
-    <div class="container">
-        <a class="navbar-brand" href="<c:url value='/' />">
-            <i class="bi bi-soundwave"></i> AI StemSep
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link active" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
-            </ul>
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item">
-                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
-                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
-                    </a>
-                </li>
-            </ul>
-            <div class="lang-switch">
-                <a href="?lang=tr" class="lang-btn active">TR</a>
-                <a href="?lang=en" class="lang-btn">EN</a>
+    <c:choose>
+      <%-- ===== STATE: Boş dropzone ===== --%>
+      <c:when test="${state == 'empty'}">
+        <div id="dropzone" class="bg-surface-container-lowest rounded-[24px] soft-shadow p-14 mb-8">
+          <label for="fileInput" class="border-2 border-dashed border-primary border-opacity-50 rounded-xl flex flex-col items-center justify-center py-16 px-8 cursor-pointer hover:bg-surface-container-low transition-colors block">
+            <div class="w-[140px] h-[140px] bg-primary-fixed rounded-full flex items-center justify-center mb-6">
+              <span class="material-symbols-outlined text-[88px] text-primary">cloud_upload</span>
             </div>
+            <h2 class="text-[28px] font-headline-md font-bold text-on-surface mb-2"><fmt:message key="upload.dropzone.title" /></h2>
+            <span class="text-[14px] font-body-sm text-on-surface-variant mb-6"><fmt:message key="auth.or" /></span>
+            <span class="bg-primary text-on-primary px-8 py-3 rounded-[12px] font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2 mb-4">
+              <span class="material-symbols-outlined text-[20px]">folder</span>
+              <fmt:message key="upload.choose" />
+            </span>
+            <p class="text-[13px] font-body-sm text-outline-variant"><fmt:message key="upload.formats" /></p>
+            <input id="fileInput" name="file" type="file" accept=".mp3,.wav,.flac" class="hidden" onchange="document.getElementById('uploadForm').submit()">
+          </label>
         </div>
+      </c:when>
+
+      <%-- ===== STATE: Dosya seçili ===== --%>
+      <c:otherwise>
+        <div class="bg-surface-container-lowest rounded-xl p-gutter soft-shadow border border-surface-dim mb-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="font-headline-sm text-headline-sm text-on-surface"><fmt:message key="upload.selected" /></h2>
+          </div>
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-surface-container-low rounded-lg p-6 border border-outline-variant/30">
+            <div class="flex items-center gap-6 flex-grow">
+              <div class="w-16 h-16 rounded-lg bg-gradient-to-tr from-primary to-inverse-primary shadow-sm flex items-center justify-center text-on-primary">
+                <span class="material-symbols-outlined text-3xl">music_note</span>
+              </div>
+              <div class="flex flex-col overflow-hidden">
+                <span class="font-body-lg text-body-lg text-on-surface font-semibold truncate max-w-xs">${selectedFile.originalFilename}</span>
+                <span class="font-mono-label text-mono-label text-outline uppercase mt-1">${selectedFile.formatLabel}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <a href="${ctx}/upload" class="font-body-sm text-on-surface-variant hover:text-error px-4 py-2 rounded-lg transition-colors border border-transparent hover:border-error/20">
+                <fmt:message key="upload.remove" />
+              </a>
+              <button type="submit" name="action" value="start" class="h-14 px-8 rounded-xl font-body-lg text-on-primary font-semibold flex items-center gap-2 active:scale-95 shadow-md" style="background: linear-gradient(135deg, #E53935 0%, #FB8C00 100%);">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <fmt:message key="upload.start" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </c:otherwise>
+    </c:choose>
+
+    <%-- ===== Gelişmiş ayarlar (her durumda) ===== --%>
+    <div class="bg-surface-container-lowest rounded-[16px] soft-shadow p-6 mb-12">
+      <div class="flex items-center gap-2 mb-6 border-b border-outline-variant/30 pb-4">
+        <span class="material-symbols-outlined text-primary">settings</span>
+        <h3 class="font-body-md text-body-md font-medium text-on-surface"><fmt:message key="upload.advanced" /></h3>
+      </div>
+
+      <div>
+        <label class="block font-mono-label text-mono-label text-outline mb-3 uppercase"><fmt:message key="upload.model.label" /></label>
+        <div class="flex flex-wrap gap-2">
+          <c:forEach var="model" items="${['htdemucs','htdemucs_ft','mdx_extra']}">
+            <label class="cursor-pointer">
+              <input type="radio" name="model" value="${model}" class="peer sr-only" ${model == 'htdemucs_ft' ? 'checked' : ''}>
+              <div class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant font-body-sm peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-colors">
+                <fmt:message key="upload.model.${model}" />
+              </div>
+            </label>
+          </c:forEach>
+        </div>
+      </div>
     </div>
-</nav>
 
-<!-- Header -->
-<section class="page-header">
-    <h1><spring:message code="upload.title"/></h1>
-    <p><spring:message code="upload.subtitle"/></p>
-</section>
-
-<!-- Upload Form -->
-<div class="container">
-    <div class="upload-card">
-
-        <c:if test="${not empty error}">
-            <div class="alert-error">
-                <i class="bi bi-exclamation-circle"></i>
-                <span><spring:message code="${error}"/></span>
-            </div>
-        </c:if>
-
-        <form id="uploadForm" action="<c:url value='/upload' />" method="post" enctype="multipart/form-data">
-
-            <!-- Dropzone -->
-            <div class="dropzone" id="dropzone">
-                <div class="icon"><i class="bi bi-cloud-arrow-up"></i></div>
-                <p><spring:message code="upload.dropzone"/></p>
-                <span class="formats"><spring:message code="upload.formats"/></span>
-                <input type="file" id="fileInput" name="file" accept=".mp3,.wav,.flac" hidden>
-            </div>
-
-            <!-- File info -->
-            <div class="file-info" id="fileInfo">
-                <div class="fi-icon"><i class="bi bi-music-note-beamed"></i></div>
-                <div class="fi-details">
-                    <div class="fi-name" id="fileName"></div>
-                    <div class="fi-size" id="fileSize"></div>
-                </div>
-                <button type="button" class="fi-remove" id="removeFile">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-
-            <!-- Model Selection -->
-            <div class="model-section">
-                <label><spring:message code="upload.model.label"/></label>
-                <div class="model-options">
-                    <div class="model-option selected" data-model="htdemucs">
-                        <input type="radio" name="model" value="htdemucs" checked>
-                        <div class="mo-name">HTDemucs</div>
-                        <div class="mo-desc"><spring:message code="upload.model.mdx"/></div>
-                    </div>
-                    <div class="model-option" data-model="htdemucs_ft">
-                        <input type="radio" name="model" value="htdemucs_ft">
-                        <div class="mo-name">HTDemucs_ft</div>
-                        <div class="mo-desc"><spring:message code="upload.model.htdemucs"/></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Submit -->
-            <button type="submit" class="btn-submit" id="submitBtn" disabled>
-                <i class="bi bi-cpu"></i> <spring:message code="upload.button"/>
-            </button>
-        </form>
+    <%-- ===== İpuçları ===== --%>
+    <div class="w-full flex flex-wrap justify-center gap-4">
+      <c:forEach var="i" begin="1" end="3">
+        <div class="bg-surface-container-lowest/60 backdrop-blur-sm border border-outline-variant/30 px-4 py-2 rounded-full flex items-center gap-2">
+          <span class="font-body-sm text-body-sm text-on-surface-variant"><fmt:message key="upload.tip${i}" /></span>
+        </div>
+      </c:forEach>
     </div>
-</div>
+  </form>
+</main>
 
-<!-- Footer -->
-<footer class="footer">
-    <spring:message code="footer.text"/>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('fileInput');
-    const fileInfo = document.getElementById('fileInfo');
-    const fileName = document.getElementById('fileName');
-    const fileSize = document.getElementById('fileSize');
-    const removeFile = document.getElementById('removeFile');
-    const submitBtn = document.getElementById('submitBtn');
-
-    // Dropzone click
-    dropzone.addEventListener('click', () => fileInput.click());
-
-    // Drag & drop
-    dropzone.addEventListener('dragover', e => {
-        e.preventDefault();
-        dropzone.classList.add('drag-over');
-    });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-    dropzone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropzone.classList.remove('drag-over');
-        if (e.dataTransfer.files.length > 0) {
-            fileInput.files = e.dataTransfer.files;
-            showFileInfo(e.dataTransfer.files[0]);
-        }
-    });
-
-    // File select
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            showFileInfo(fileInput.files[0]);
-        }
-    });
-
-    function showFileInfo(file) {
-        fileName.textContent = file.name;
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        fileSize.textContent = sizeMB + ' MB';
-        fileInfo.classList.add('show');
-        dropzone.style.display = 'none';
-        submitBtn.disabled = false;
-    }
-
-    // Remove file
-    removeFile.addEventListener('click', () => {
-        fileInput.value = '';
-        fileInfo.classList.remove('show');
-        dropzone.style.display = 'block';
-        submitBtn.disabled = true;
-    });
-
-    // Model select
-    document.querySelectorAll('.model-option').forEach(opt => {
-        opt.addEventListener('click', () => {
-            document.querySelectorAll('.model-option').forEach(o => o.classList.remove('selected'));
-            opt.classList.add('selected');
-            opt.querySelector('input').checked = true;
-        });
-    });
-</script>
-</body>
-</html>
+<jsp:include page="/WEB-INF/views/layout/site-footer.jsp" />
+<jsp:include page="/WEB-INF/views/layout/footer.jsp" />

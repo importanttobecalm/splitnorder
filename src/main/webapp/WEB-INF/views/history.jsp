@@ -1,442 +1,163 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<!DOCTYPE html>
-<html lang="${pageContext.response.locale}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><spring:message code="history.title"/> - <spring:message code="app.title"/></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #e8d8b0;
-            --primary-light: #f5e9c7;
-            --primary-dark: #c4b289;
-            --accent: #c4a875;
-            --bg-dark: #0a0908;
-            --bg-card: #14120f;
-            --bg-card-hover: #1c1916;
-            --text-primary: #f0ebe0;
-            --text-secondary: #8a8378;
-            --gradient-1: linear-gradient(135deg, #e8d8b0, #c4a875);
-            --glow: 0 0 40px rgba(232, 216, 176, 0.18);
-        }
+<jsp:include page="/WEB-INF/views/layout/head.jsp">
+  <jsp:param name="titleKey" value="history.title" />
+</jsp:include>
+<c:set var="navActive" value="history" scope="request" />
+<jsp:include page="/WEB-INF/views/layout/nav.jsp" />
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<c:set var="view" value="${empty param.view ? 'grid' : param.view}" />
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+<main class="max-w-[1240px] mx-auto px-margin_mobile md:px-margin_desktop pt-8 pb-24">
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background:
-                radial-gradient(circle at 20% 50%, rgba(232, 216, 176,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(196, 168, 117,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(232, 216, 176,0.05) 0%, transparent 50%);
-            z-index: -1;
-        }
-
-        .navbar {
-            background: rgba(10, 9, 8, 0.8) !important;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(232, 216, 176,0.2);
-            padding: 1rem 0;
-        }
-
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.5rem;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-link {
-            color: var(--text-secondary) !important;
-            font-weight: 500;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .nav-link:hover, .nav-link.active {
-            color: var(--primary-light) !important;
-        }
-
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: var(--gradient-1);
-            transition: all 0.3s;
-            transform: translateX(-50%);
-        }
-
-        .nav-link:hover::after { width: 80%; }
-
-        .lang-switch {
-            display: flex;
-            gap: 0.25rem;
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 2px;
-        }
-
-        .lang-btn {
-            padding: 4px 12px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-        }
-
-        .lang-btn.active, .lang-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .page-header {
-            text-align: center;
-            padding: 4rem 2rem 2rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Table */
-        .history-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-
-        .history-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(232, 216, 176,0.15);
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .history-table thead th {
-            padding: 1rem 1.25rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(232, 216, 176,0.15);
-            text-align: left;
-        }
-
-        .history-table tbody tr {
-            border-bottom: 1px solid rgba(232, 216, 176,0.08);
-            transition: background 0.3s;
-        }
-
-        .history-table tbody tr:last-child { border-bottom: none; }
-
-        .history-table tbody tr:hover {
-            background: var(--bg-card-hover);
-        }
-
-        .history-table td {
-            padding: 1rem 1.25rem;
-            font-size: 0.95rem;
-        }
-
-        .file-cell {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .file-cell .fc-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: var(--gradient-1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .model-badge {
-            display: inline-block;
-            padding: 0.2rem 0.7rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            background: rgba(232, 216, 176,0.15);
-            color: var(--primary-light);
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .status-badge .dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-        }
-
-        .status-badge.completed { background: rgba(16,185,129,0.15); color: #34d399; }
-        .status-badge.completed .dot { background: #34d399; }
-
-        .status-badge.processing { background: rgba(232, 216, 176,0.15); color: var(--primary-light); }
-        .status-badge.processing .dot { background: var(--primary-light); animation: pulse 1.5s ease-in-out infinite; }
-
-        .status-badge.pending { background: rgba(234,179,8,0.15); color: #facc15; }
-        .status-badge.pending .dot { background: #facc15; }
-
-        .status-badge.failed { background: rgba(220,90,80,0.15); color: #f87171; }
-        .status-badge.failed .dot { background: #f87171; }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .btn-view {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 1rem;
-            border: 1px solid rgba(232, 216, 176,0.3);
-            border-radius: 8px;
-            background: transparent;
-            color: var(--primary-light);
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .btn-view:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-        }
-
-        .empty-state .empty-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(232, 216, 176,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin: 0 auto 1.5rem;
-            color: var(--text-secondary);
-        }
-
-        .empty-state p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .btn-upload-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.75rem;
-            background: var(--gradient-1);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-            box-shadow: var(--glow);
-        }
-
-        .btn-upload-link:hover {
-            transform: translateY(-2px);
-            color: white;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            border-top: 1px solid rgba(232, 216, 176,0.1);
-            margin-top: 4rem;
-        }
-
-        @media (max-width: 576px) {
-            .page-header h1 { font-size: 1.8rem; }
-        }
-    </style>
-</head>
-<body>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg sticky-top">
-    <div class="container">
-        <a class="navbar-brand" href="<c:url value='/' />">
-            <i class="bi bi-soundwave"></i> AI StemSep
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link active" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
-            </ul>
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item">
-                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
-                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
-                    </a>
-                </li>
-            </ul>
-            <div class="lang-switch">
-                <a href="?lang=tr" class="lang-btn active">TR</a>
-                <a href="?lang=en" class="lang-btn">EN</a>
-            </div>
-        </div>
+  <%-- Üst satır: başlık + view toggle + arama --%>
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div>
+      <h1 class="font-headline-md text-headline-md text-on-surface mb-1"><fmt:message key="history.title" /></h1>
+      <p class="font-body-sm text-body-sm text-on-surface-variant"><fmt:message key="history.subtitle" />: ${fn:length(jobs)}</p>
     </div>
-</nav>
 
-<!-- Header -->
-<section class="page-header">
-    <h1><spring:message code="history.title"/></h1>
-</section>
+    <div class="flex items-center gap-3">
+      <%-- Arama --%>
+      <form method="get" action="${ctx}/history" class="relative">
+        <input type="hidden" name="view" value="${view}">
+        <input type="text" name="q" value="${param.q}" placeholder="<fmt:message key='history.search' />"
+               class="pl-10 pr-4 py-2 bg-surface-container-lowest rounded-lg border border-outline-variant/50 font-body-sm focus:border-primary outline-none">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+      </form>
 
-<!-- Content -->
-<div class="history-container">
-    <c:choose>
-        <c:when test="${empty jobs}">
-            <div class="history-card">
-                <div class="empty-state">
-                    <div class="empty-icon"><i class="bi bi-clock-history"></i></div>
-                    <p><spring:message code="history.empty"/></p>
-                    <a href="${pageContext.request.contextPath}/upload" class="btn-upload-link">
-                        <i class="bi bi-upload"></i> <spring:message code="nav.upload"/>
-                    </a>
-                </div>
+      <%-- View toggle --%>
+      <div class="flex bg-surface-container-lowest rounded-lg border border-outline-variant/30 overflow-hidden">
+        <a href="${ctx}/history?view=grid" class="px-3 py-2 ${view == 'grid' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'} transition-colors">
+          <span class="material-symbols-outlined text-[20px]">grid_view</span>
+        </a>
+        <a href="${ctx}/history?view=list" class="px-3 py-2 ${view == 'list' ? 'bg-primary text-on-primary' : 'text-on-surface-variant'} transition-colors">
+          <span class="material-symbols-outlined text-[20px]">view_list</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <c:choose>
+    <%-- ===== STATE: Boş ===== --%>
+    <c:when test="${empty jobs}">
+      <div class="flex flex-col items-center justify-center py-24">
+        <div class="w-32 h-32 rounded-full bg-surface-container-low flex items-center justify-center mb-6">
+          <span class="material-symbols-outlined text-[64px] text-outline-variant">folder_open</span>
+        </div>
+        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-2"><fmt:message key="history.empty.title" /></h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mb-8 text-center max-w-md"><fmt:message key="history.empty.message" /></p>
+        <a href="${ctx}/upload" class="bg-primary text-on-primary px-8 py-3 rounded-xl font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2">
+          <span class="material-symbols-outlined">upload_file</span>
+          <fmt:message key="home.cta.upload" />
+        </a>
+      </div>
+    </c:when>
+
+    <%-- ===== STATE: Grid view ===== --%>
+    <c:when test="${view == 'grid'}">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter">
+        <c:forEach var="job" items="${jobs}">
+          <a href="${ctx}/job/${job.id}/result" class="bg-surface-container-lowest rounded-xl overflow-hidden soft-shadow hover:shadow-lg transition-all group">
+            <div class="h-[160px] relative bg-gradient-to-br from-primary-fixed via-tertiary-fixed to-secondary-fixed">
+              <div class="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
+                <c:choose>
+                  <c:when test="${job.status == 'COMPLETED'}">
+                    <span class="material-symbols-outlined text-[14px] text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    <span class="font-body-sm text-[11px] font-bold text-green-800"><fmt:message key="status.completed" /></span>
+                  </c:when>
+                  <c:when test="${job.status == 'PROCESSING'}">
+                    <span class="material-symbols-outlined text-[14px] text-primary animate-spin">sync</span>
+                    <span class="font-body-sm text-[11px] font-bold text-primary"><fmt:message key="status.processing" /></span>
+                  </c:when>
+                  <c:when test="${job.status == 'FAILED'}">
+                    <span class="material-symbols-outlined text-[14px] text-error" style="font-variation-settings: 'FILL' 1;">error</span>
+                    <span class="font-body-sm text-[11px] font-bold text-error"><fmt:message key="status.failed" /></span>
+                  </c:when>
+                  <c:otherwise>
+                    <span class="material-symbols-outlined text-[14px] text-outline">schedule</span>
+                    <span class="font-body-sm text-[11px] font-bold text-outline"><fmt:message key="status.pending" /></span>
+                  </c:otherwise>
+                </c:choose>
+              </div>
+              <c:if test="${not empty job.durationLabel}">
+                <div class="absolute bottom-3 right-3 bg-inverse-surface/80 backdrop-blur-sm px-2 py-1 rounded-lg text-on-primary font-mono-numeric text-[12px]">${job.durationLabel}</div>
+              </c:if>
             </div>
-        </c:when>
-        <c:otherwise>
-            <div class="history-card">
-                <div class="table-wrapper">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th><spring:message code="history.table.filename"/></th>
-                                <th><spring:message code="history.table.model"/></th>
-                                <th><spring:message code="history.table.status"/></th>
-                                <th><spring:message code="history.table.date"/></th>
-                                <th><spring:message code="history.table.actions"/></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <c:forEach var="job" items="${jobs}">
-                                <tr>
-                                    <td>
-                                        <div class="file-cell">
-                                            <div class="fc-icon"><i class="bi bi-music-note-beamed"></i></div>
-                                            <span>${job.originalFilename}</span>
-                                        </div>
-                                    </td>
-                                    <td><span class="model-badge">${job.modelUsed}</span></td>
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${job.status == 'COMPLETED'}">
-                                                <span class="status-badge completed"><span class="dot"></span> <spring:message code="status.COMPLETED"/></span>
-                                            </c:when>
-                                            <c:when test="${job.status == 'PROCESSING'}">
-                                                <span class="status-badge processing"><span class="dot"></span> <spring:message code="status.PROCESSING"/></span>
-                                            </c:when>
-                                            <c:when test="${job.status == 'PENDING'}">
-                                                <span class="status-badge pending"><span class="dot"></span> <spring:message code="status.PENDING"/></span>
-                                            </c:when>
-                                            <c:when test="${job.status == 'FAILED'}">
-                                                <span class="status-badge failed"><span class="dot"></span> <spring:message code="status.FAILED"/></span>
-                                            </c:when>
-                                        </c:choose>
-                                    </td>
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${not empty job.createdAt}">
-                                                ${fn:substring(job.createdAt.toString(), 0, 16)}
-                                            </c:when>
-                                            <c:otherwise>-</c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td>
-                                        <a href="${pageContext.request.contextPath}/job/${job.id}" class="btn-view">
-                                            <i class="bi bi-eye"></i> <spring:message code="history.view"/>
-                                        </a>
-                                    </td>
-                                </tr>
-                            </c:forEach>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="p-4">
+              <h3 class="font-body-sm text-body-sm font-bold text-on-surface truncate">${job.originalFilename}</h3>
+              <p class="font-mono-label text-mono-label text-on-surface-variant truncate mt-1">${job.modelUsed}</p>
+              <div class="flex items-center gap-1.5 mt-3">
+                <div class="w-2.5 h-2.5 rounded-full bg-[#E53935]"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-[#FB8C00]"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-[#8E24AA]"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-[#00897B]"></div>
+              </div>
+              <div class="mt-3 pt-3 border-t border-outline-variant/30 flex items-center justify-between">
+                <span class="font-body-sm text-[12px] text-on-surface-variant">
+                  <fmt:formatDate value="${job.createdAtDate}" type="both" dateStyle="short" timeStyle="short" />
+                </span>
+                <span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+              </div>
             </div>
-        </c:otherwise>
-    </c:choose>
-</div>
+          </a>
+        </c:forEach>
+      </div>
+    </c:when>
 
-<!-- Footer -->
-<footer class="footer">
-    <spring:message code="footer.text"/>
-</footer>
+    <%-- ===== STATE: List view ===== --%>
+    <c:otherwise>
+      <div class="bg-surface-container-lowest rounded-xl soft-shadow overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-surface-container-low border-b border-outline-variant/30">
+            <tr class="font-mono-label text-mono-label text-outline uppercase tracking-wider">
+              <th class="px-6 py-3"><fmt:message key="history.col.file" /></th>
+              <th class="px-6 py-3"><fmt:message key="history.col.model" /></th>
+              <th class="px-6 py-3"><fmt:message key="history.col.status" /></th>
+              <th class="px-6 py-3"><fmt:message key="history.col.date" /></th>
+              <th class="px-6 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <c:forEach var="job" items="${jobs}">
+              <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low transition-colors">
+                <td class="px-6 py-4">
+                  <a href="${ctx}/job/${job.id}/result" class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-inverse-primary flex items-center justify-center text-on-primary">
+                      <span class="material-symbols-outlined text-[20px]">music_note</span>
+                    </div>
+                    <div>
+                      <div class="font-body-md text-body-md font-medium text-on-surface truncate max-w-xs">${job.originalFilename}</div>
+                    </div>
+                  </a>
+                </td>
+                <td class="px-6 py-4 font-mono-label text-on-surface-variant">${job.modelUsed}</td>
+                <td class="px-6 py-4">
+                  <c:choose>
+                    <c:when test="${job.status == 'COMPLETED'}"><span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-[11px] font-bold"><fmt:message key="status.completed" /></span></c:when>
+                    <c:when test="${job.status == 'PROCESSING'}"><span class="px-3 py-1 bg-primary-fixed text-primary rounded-full text-[11px] font-bold"><fmt:message key="status.processing" /></span></c:when>
+                    <c:when test="${job.status == 'FAILED'}"><span class="px-3 py-1 bg-error-container text-on-error-container rounded-full text-[11px] font-bold"><fmt:message key="status.failed" /></span></c:when>
+                    <c:otherwise><span class="px-3 py-1 bg-surface-container text-outline rounded-full text-[11px] font-bold"><fmt:message key="status.pending" /></span></c:otherwise>
+                  </c:choose>
+                </td>
+                <td class="px-6 py-4 font-body-sm text-on-surface-variant">
+                  <fmt:formatDate value="${job.createdAtDate}" type="both" dateStyle="short" timeStyle="short" />
+                </td>
+                <td class="px-6 py-4 text-right">
+                  <a href="${ctx}/job/${job.id}/result" class="text-primary hover:text-primary-container">
+                    <span class="material-symbols-outlined">arrow_forward</span>
+                  </a>
+                </td>
+              </tr>
+            </c:forEach>
+          </tbody>
+        </table>
+      </div>
+    </c:otherwise>
+  </c:choose>
+</main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<jsp:include page="/WEB-INF/views/layout/site-footer.jsp" />
+<jsp:include page="/WEB-INF/views/layout/footer.jsp" />

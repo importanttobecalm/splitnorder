@@ -1,362 +1,126 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<!DOCTYPE html>
-<html lang="${pageContext.request.locale}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><spring:message code="processing.title"/> - <spring:message code="app.title"/></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #e8d8b0;
-            --primary-light: #f5e9c7;
-            --primary-dark: #c4b289;
-            --accent: #c4a875;
-            --bg-dark: #0a0908;
-            --bg-card: #14120f;
-            --bg-card-hover: #1c1916;
-            --text-primary: #f0ebe0;
-            --text-secondary: #8a8378;
-            --gradient-1: linear-gradient(135deg, #e8d8b0, #c4a875);
-            --glow: 0 0 40px rgba(232, 216, 176, 0.18);
-        }
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<jsp:include page="/WEB-INF/views/layout/head.jsp">
+  <jsp:param name="titleKey" value="processing.title" />
+</jsp:include>
+<jsp:include page="/WEB-INF/views/layout/nav.jsp" />
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<%-- Job durumu: PENDING | PROCESSING | COMPLETED | FAILED --%>
+<c:set var="progress" value="${empty job.progressPercent ? 0 : job.progressPercent}" />
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+<main class="flex-grow flex items-center justify-center pt-12 pb-12 px-margin_mobile md:px-margin_desktop">
+  <div class="w-full max-w-[760px] bg-surface-container-lowest rounded-[24px] soft-shadow p-8 md:p-[56px]">
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background:
-                radial-gradient(circle at 20% 50%, rgba(232, 216, 176,0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(196, 168, 117,0.08) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(232, 216, 176,0.05) 0%, transparent 50%);
-            z-index: -1;
-        }
+    <%-- Üst: dosya bilgisi --%>
+    <div class="flex items-center justify-between mb-10 pb-6 border-b border-outline-variant/30">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-inverse-primary shadow-sm flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary">album</span>
+        </div>
+        <div>
+          <h3 class="font-body-md text-on-surface font-semibold truncate max-w-[200px] md:max-w-xs">${job.originalFilename}</h3>
+          <p class="font-mono-label text-mono-label text-on-surface-variant mt-1">${job.modelUsed}</p>
+        </div>
+      </div>
+      <c:if test="${job.status != 'COMPLETED'}">
+        <form method="post" action="${ctx}/job/${job.id}/cancel">
+          <button type="submit" class="flex items-center gap-2 px-3 py-2 text-on-surface-variant hover:text-error hover:bg-error-container/50 rounded-lg transition-colors font-body-sm">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+            <span class="hidden sm:inline"><fmt:message key="processing.cancel" /></span>
+          </button>
+        </form>
+      </c:if>
+    </div>
 
-        .navbar {
-            background: rgba(10, 9, 8, 0.8) !important;
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(232, 216, 176,0.2);
-            padding: 1rem 0;
-        }
+    <%-- Headline --%>
+    <div class="text-center mb-12">
+      <h2 class="font-headline-md text-headline-md text-on-surface mb-3">
+        <c:choose>
+          <c:when test="${job.status == 'COMPLETED'}"><fmt:message key="processing.done" /></c:when>
+          <c:when test="${job.status == 'FAILED'}"><fmt:message key="processing.failed" /></c:when>
+          <c:otherwise><fmt:message key="processing.inprogress" /></c:otherwise>
+        </c:choose>
+      </h2>
+      <p class="font-body-lg text-body-lg text-on-surface-variant">
+        <c:choose>
+          <c:when test="${job.status == 'COMPLETED'}"><fmt:message key="processing.done.sub" /></c:when>
+          <c:when test="${job.status == 'FAILED'}">${job.errorMessage}</c:when>
+          <c:otherwise><fmt:message key="processing.inprogress.sub" /></c:otherwise>
+        </c:choose>
+      </p>
+    </div>
 
-        .navbar-brand {
-            font-weight: 800;
-            font-size: 1.5rem;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    <%-- Progress ring + stem list --%>
+    <div class="flex flex-col md:flex-row items-center gap-12 md:gap-16 mb-12">
+      <%-- Progress ring --%>
+      <div class="relative w-[240px] h-[240px] flex-shrink-0 flex items-center justify-center">
+        <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="gradientStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#E53935"></stop>
+              <stop offset="33%" stop-color="#FB8C00"></stop>
+              <stop offset="66%" stop-color="#8E24AA"></stop>
+              <stop offset="100%" stop-color="#00897B"></stop>
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#E1E8F2" stroke-width="6"></circle>
+          <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gradientStroke)" stroke-width="6" stroke-linecap="round"
+                  stroke-dasharray="282.7" stroke-dashoffset="${282.7 - (282.7 * progress / 100)}"></circle>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span class="font-mono-numeric text-[48px] font-bold tracking-tight text-on-surface mb-1">${progress}%</span>
+          <span class="font-body-sm text-on-surface-variant"><fmt:message key="processing.eta" /></span>
+        </div>
+      </div>
 
-        .nav-link {
-            color: var(--text-secondary) !important;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
+      <%-- Stem list --%>
+      <div class="w-full flex-grow space-y-5">
+        <c:set var="stems" value="vocals,drums,bass,other" />
+        <c:set var="colors" value="#E53935,#FB8C00,#8E24AA,#00897B" />
+        <c:forEach var="stem" items="${stems}" varStatus="loop">
+          <c:set var="stemPct" value="${progress >= ((loop.index + 1) * 25) ? 100 : (progress > (loop.index * 25) ? ((progress - (loop.index * 25)) * 4) : 0)}" />
+          <div class="flex flex-col gap-1.5 ${stemPct == 0 ? 'opacity-60' : ''}">
+            <div class="flex justify-between items-end text-sm">
+              <span class="font-body-sm font-medium text-on-surface"><fmt:message key="stem.${stem}" /></span>
+              <c:choose>
+                <c:when test="${stemPct >= 100}"><span class="material-symbols-outlined text-green-500 text-[18px]" style="font-variation-settings: 'FILL' 1;">check_circle</span></c:when>
+                <c:when test="${stemPct > 0}"><span class="material-symbols-outlined text-[18px] animate-spin" style="color: ${colors.split(',')[loop.index]};">sync</span></c:when>
+                <c:otherwise><div class="w-1.5 h-1.5 rounded-full bg-outline-variant mb-1"></div></c:otherwise>
+              </c:choose>
+            </div>
+            <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" style="width: ${stemPct}%; background-color: ${colors.split(',')[loop.index]};"></div>
+            </div>
+          </div>
+        </c:forEach>
+      </div>
+    </div>
 
-        .nav-link:hover { color: var(--primary-light) !important; }
-
-        .lang-switch {
-            display: flex;
-            gap: 0.25rem;
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 2px;
-        }
-
-        .lang-btn {
-            padding: 4px 12px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-        }
-
-        .lang-btn.active, .lang-btn:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Processing content */
-        .processing-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: calc(100vh - 200px);
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .processing-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(232, 216, 176,0.15);
-            border-radius: 24px;
-            padding: 3rem;
-            max-width: 500px;
-            width: 100%;
-        }
-
-        /* Spinner */
-        .spinner-ring {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 2rem;
-            position: relative;
-        }
-
-        .spinner-ring::before,
-        .spinner-ring::after {
-            content: '';
-            position: absolute;
-            border-radius: 50%;
-        }
-
-        .spinner-ring::before {
-            top: 0; left: 0; right: 0; bottom: 0;
-            border: 4px solid rgba(232, 216, 176,0.15);
-        }
-
-        .spinner-ring::after {
-            top: 0; left: 0; right: 0; bottom: 0;
-            border: 4px solid transparent;
-            border-top-color: var(--primary);
-            border-right-color: var(--accent);
-            animation: spin 1.2s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .spinner-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2rem;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .processing-card h2 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .processing-card .subtitle {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-        }
-
-        /* Status info */
-        .status-info {
-            background: rgba(232, 216, 176,0.08);
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.4rem 0;
-        }
-
-        .status-row .label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .status-row .value {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.2rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .status-badge.pending {
-            background: rgba(234,179,8,0.15);
-            color: #facc15;
-        }
-
-        .status-badge.processing {
-            background: rgba(232, 216, 176,0.15);
-            color: var(--primary-light);
-        }
-
-        .status-badge .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .status-badge.pending .dot { background: #facc15; }
-        .status-badge.processing .dot { background: var(--primary-light); }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .wait-text {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Waveform */
-        .mini-wave {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 3px;
-            height: 30px;
-            margin: 1.5rem auto 0;
-        }
-
-        .mini-wave .bar {
-            width: 3px;
-            background: var(--gradient-1);
-            border-radius: 3px;
-            animation: wave 1.2s ease-in-out infinite;
-        }
-
-        @keyframes wave {
-            0%, 100% { height: 6px; }
-            50% { height: 26px; }
-        }
-
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            border-top: 1px solid rgba(232, 216, 176,0.1);
-            margin-top: 4rem;
-        }
-    </style>
-</head>
-<body>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg sticky-top">
-    <div class="container">
-        <a class="navbar-brand" href="<c:url value='/' />">
-            <i class="bi bi-soundwave"></i> AI StemSep
+    <%-- Tamamlandı butonu --%>
+    <c:if test="${job.status == 'COMPLETED'}">
+      <div class="flex justify-center">
+        <a href="${ctx}/job/${job.id}/result" class="bg-primary hover:bg-primary-container text-on-primary px-8 py-4 rounded-xl font-body-md font-medium flex items-center gap-2 transition-all shadow-md">
+          <span class="material-symbols-outlined">graphic_eq</span>
+          <fmt:message key="processing.viewResult" />
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
-            </ul>
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item">
-                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
-                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
-                    </a>
-                </li>
-            </ul>
-            <div class="lang-switch">
-                <a href="?lang=tr" class="lang-btn active">TR</a>
-                <a href="?lang=en" class="lang-btn">EN</a>
-            </div>
-        </div>
+      </div>
+    </c:if>
+
+    <%-- Footer ipucu --%>
+    <div class="flex justify-center mt-8">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-low text-outline font-body-sm">
+        <span>💡</span>
+        <span><fmt:message key="processing.tip" /></span>
+      </div>
     </div>
-</nav>
+  </div>
+</main>
 
-<!-- Processing -->
-<div class="processing-wrapper">
-    <div class="processing-card">
-        <div class="spinner-ring">
-            <i class="bi bi-music-note-beamed spinner-icon"></i>
-        </div>
+<%-- Otomatik yenileme (tamamlanmamışsa 3 sn) --%>
+<c:if test="${job.status == 'PROCESSING' || job.status == 'PENDING'}">
+  <script>setTimeout(function(){location.reload();}, 3000);</script>
+</c:if>
 
-        <h2><spring:message code="processing.title"/></h2>
-        <p class="subtitle"><spring:message code="processing.subtitle"/></p>
-
-        <div class="status-info">
-            <div class="status-row">
-                <span class="label"><i class="bi bi-file-earmark-music"></i> ${job.originalFilename}</span>
-                <span class="value">${job.modelUsed}</span>
-            </div>
-            <div class="status-row">
-                <span class="label">Status</span>
-                <span id="statusBadge" class="status-badge processing">
-                    <span class="dot"></span>
-                    <span id="statusText"><spring:message code="processing.status.processing"/></span>
-                </span>
-            </div>
-        </div>
-
-        <p class="wait-text"><spring:message code="processing.wait"/></p>
-
-        <div class="mini-wave">
-            <c:forEach begin="1" end="15" var="i">
-                <div class="bar" style="animation-delay: ${i * 0.08}s;"></div>
-            </c:forEach>
-        </div>
-    </div>
-</div>
-
-<!-- Footer -->
-<footer class="footer">
-    <spring:message code="footer.text"/>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    const jobId = '${job != null ? job.id : ""}';
-    if (!jobId) {
-        console.error("Job ID not found!");
-        window.location.href = '${pageContext.request.contextPath}/history';
-    }
-
-    function pollStatus() {
-        const url = '<c:url value="/job/" />' + jobId + '/status';
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'COMPLETED' || data.status === 'FAILED') {
-                    window.location.href = '<c:url value="/job/" />' + jobId;
-                }
-            })
-            .catch(() => {});
-    }
-
-    setInterval(pollStatus, 3000);
-</script>
-</body>
-</html>
+<jsp:include page="/WEB-INF/views/layout/site-footer.jsp" />
+<jsp:include page="/WEB-INF/views/layout/footer.jsp" />

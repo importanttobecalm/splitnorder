@@ -1,222 +1,147 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<!DOCTYPE html>
-<html lang="${pageContext.response.locale.language}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><spring:message code="nav.profile" text="Profil"/> | AI StemSep</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #8A2BE2;
-            --primary-dark: #7B21D0;
-            --bg-dark: #0F0F13;
-            --card-bg: #1A1A24;
-            --text-main: #FFFFFF;
-            --text-dim: #A0A0B0;
-            --accent: #00F2FE;
-        }
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<jsp:include page="/WEB-INF/views/layout/head.jsp">
+  <jsp:param name="titleKey" value="profile.title" />
+</jsp:include>
+<jsp:include page="/WEB-INF/views/layout/nav.jsp" />
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Outfit', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+<%-- Aktif sekme: ${param.tab} (account | security | preferences | language | notifications | data) --%>
+<c:set var="tab" value="${empty param.tab ? 'account' : param.tab}" />
 
-        /* Navbar Style */
-        .navbar {
-            background: rgba(15, 15, 19, 0.8) !important;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 1rem 0;
-        }
-        .navbar-brand {
-            font-weight: 700;
-            color: var(--text-main) !important;
-            font-size: 1.5rem;
-        }
-        .nav-link {
-            color: var(--text-dim) !important;
-            font-weight: 500;
-            margin: 0 10px;
-            transition: 0.3s;
-        }
-        .nav-link:hover, .nav-link.active {
-            color: var(--accent) !important;
-        }
+<main class="max-w-[1240px] mx-auto px-margin_mobile md:px-margin_desktop pt-8 pb-24 flex flex-col md:flex-row gap-8 items-start">
 
-        /* Profile Card */
-        .profile-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-        }
-        .profile-card {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 40px;
-            width: 100%;
-            max-width: 500px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        .profile-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-        }
-
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            margin: 0 auto 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: white;
-            border: 4px solid rgba(255,255,255,0.1);
-            object-fit: cover;
-        }
-
-        .profile-name {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .profile-email {
-            color: var(--text-dim);
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-        }
-
-        .info-grid {
-            text-align: left;
-            background: rgba(0,0,0,0.2);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .info-item:last-child { border-bottom: none; }
-        .info-label { color: var(--text-dim); font-size: 0.9rem; }
-        .info-value { font-weight: 600; color: var(--accent); }
-
-        .btn-logout {
-            background: rgba(255, 50, 50, 0.1);
-            color: #FF4D4D;
-            border: 1px solid rgba(255, 50, 50, 0.2);
-            padding: 12px 30px;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: 0.3s;
-            width: 100%;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-logout:hover {
-            background: #FF4D4D;
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        footer {
-            padding: 20px;
-            text-align: center;
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-    </style>
-</head>
-<body>
-
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg sticky-top">
-    <div class="container">
-        <a class="navbar-brand" href="<c:url value='/' />">
-            <i class="bi bi-soundwave"></i> AI StemSep
-        </a>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link active" href="<c:url value='/api/auth/profile' />"><i class="bi bi-person-circle"></i> <spring:message code="nav.profile" text="Profil"/></a></li>
-            </ul>
-        </div>
+  <%-- Sol sidebar --%>
+  <aside class="w-full md:w-[260px] flex-shrink-0 bg-surface-container-lowest rounded-xl soft-shadow overflow-hidden md:sticky md:top-[96px]">
+    <div class="p-4">
+      <h2 class="font-mono-label text-mono-label text-outline uppercase mb-4 px-3"><fmt:message key="profile.settings" /></h2>
+      <nav class="flex flex-col gap-1">
+        <c:forEach var="t" items="${['account','security','preferences','language','notifications','data']}">
+          <a href="${ctx}/profile?tab=${t}" class="flex items-center gap-3 px-3 py-2 ${tab == t ? 'bg-primary-fixed text-primary border-l-4 border-primary rounded-r-lg' : 'text-on-surface-variant hover:bg-surface-container-low rounded-lg'} font-body-sm text-body-sm transition-colors">
+            <span class="material-symbols-outlined text-xl">
+              <c:choose>
+                <c:when test="${t == 'account'}">person</c:when>
+                <c:when test="${t == 'security'}">security</c:when>
+                <c:when test="${t == 'preferences'}">tune</c:when>
+                <c:when test="${t == 'language'}">language</c:when>
+                <c:when test="${t == 'notifications'}">notifications</c:when>
+                <c:otherwise>storage</c:otherwise>
+              </c:choose>
+            </span>
+            <fmt:message key="profile.tab.${t}" />
+          </a>
+        </c:forEach>
+      </nav>
     </div>
-</nav>
+    <div class="p-4 border-t border-outline-variant/30">
+      <form method="post" action="${ctx}/profile/delete" onsubmit="return confirm('<fmt:message key="profile.delete.confirm" />');">
+        <button type="submit" class="flex items-center gap-3 px-3 py-2 text-error hover:bg-error-container/50 rounded-lg font-body-sm transition-colors w-full">
+          <span class="material-symbols-outlined text-xl">delete</span>
+          <fmt:message key="profile.delete.action" />
+        </button>
+      </form>
+    </div>
+  </aside>
 
-<div class="profile-container">
-    <div class="profile-card">
-        <!-- Avatar -->
-        <c:choose>
-            <c:when test="${not empty user.profilePictureUrl}">
-                <img src="${user.profilePictureUrl}" alt="Avatar" class="profile-avatar">
+  <%-- Sağ içerik --%>
+  <div class="w-full flex-grow flex flex-col gap-8">
+    <c:choose>
+
+      <%-- ===== Hesap bilgileri ===== --%>
+      <c:when test="${tab == 'account'}">
+        <section class="bg-surface-container-lowest rounded-xl soft-shadow p-8">
+          <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6"><fmt:message key="profile.tab.account" /></h2>
+
+          <c:if test="${not empty saved}">
+            <div class="mb-6 p-3 rounded-[10px] bg-primary-fixed text-on-primary-fixed font-body-sm"><fmt:message key="profile.saved" /></div>
+          </c:if>
+
+          <form method="post" action="${ctx}/profile/update" class="flex flex-col gap-6">
+            <div class="flex flex-col md:flex-row gap-8 items-start">
+              <div class="flex flex-col items-center gap-3">
+                <c:choose>
+                  <c:when test="${not empty sessionScope.user.profilePictureUrl}">
+                    <img src="${sessionScope.user.profilePictureUrl}" alt="" class="w-24 h-24 rounded-full object-cover shadow-sm">
+                  </c:when>
+                  <c:otherwise>
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-primary-container to-primary flex items-center justify-center text-on-primary font-headline-md text-headline-md">
+                      ${fn:toUpperCase(fn:substring(sessionScope.user.username, 0, 2))}
+                    </div>
+                  </c:otherwise>
+                </c:choose>
+                <span class="font-mono-label text-mono-label text-on-surface-variant uppercase">${sessionScope.user.authProvider}</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                <div class="flex flex-col gap-1 md:col-span-2">
+                  <label class="font-mono-label text-mono-label text-on-surface-variant uppercase"><fmt:message key="auth.field.username" /></label>
+                  <input type="text" name="username" value="${sessionScope.user.username}" class="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-4 py-2 font-body-sm focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all">
+                </div>
+                <div class="flex flex-col gap-1 md:col-span-2">
+                  <label class="font-mono-label text-mono-label text-on-surface-variant uppercase flex justify-between">
+                    <span><fmt:message key="auth.field.email" /></span>
+                    <c:if test="${sessionScope.user.emailVerified}">
+                      <span class="text-green-600 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                        <fmt:message key="profile.email.verified" />
+                      </span>
+                    </c:if>
+                  </label>
+                  <input type="email" value="${sessionScope.user.email}" disabled class="bg-surface-container-low border border-outline-variant/50 rounded-lg px-4 py-2 font-body-sm text-on-surface-variant cursor-not-allowed">
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-outline-variant/20">
+              <button type="submit" class="bg-primary text-on-primary font-body-sm px-6 py-2 rounded-xl hover:bg-primary-container transition-colors">
+                <fmt:message key="profile.save" />
+              </button>
+            </div>
+          </form>
+        </section>
+      </c:when>
+
+      <%-- ===== Güvenlik (LOCAL kullanıcı için şifre değiştirme) ===== --%>
+      <c:when test="${tab == 'security'}">
+        <section class="bg-surface-container-lowest rounded-xl soft-shadow p-8">
+          <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6"><fmt:message key="profile.tab.security" /></h2>
+          <c:choose>
+            <c:when test="${sessionScope.user.authProvider == 'LOCAL'}">
+              <form method="post" action="${ctx}/profile/password" class="flex flex-col gap-6 max-w-md">
+                <div class="flex flex-col gap-1">
+                  <label class="font-mono-label text-mono-label text-on-surface-variant uppercase"><fmt:message key="profile.password.current" /></label>
+                  <input type="password" name="currentPassword" required class="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-4 py-2 font-body-sm focus:border-primary outline-none">
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="font-mono-label text-mono-label text-on-surface-variant uppercase"><fmt:message key="profile.password.new" /></label>
+                  <input type="password" name="newPassword" required minlength="8" class="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-4 py-2 font-body-sm focus:border-primary outline-none">
+                </div>
+                <button type="submit" class="bg-primary text-on-primary font-body-sm px-6 py-2 rounded-xl hover:bg-primary-container transition-colors self-end">
+                  <fmt:message key="profile.password.change" />
+                </button>
+              </form>
             </c:when>
             <c:otherwise>
-                <div class="profile-avatar">
-                    ${user.username.substring(0, 1).toUpperCase()}
-                </div>
+              <div class="flex items-center gap-4 p-6 bg-surface-container-low rounded-lg">
+                <span class="material-symbols-outlined text-primary text-[32px]">verified_user</span>
+                <p class="font-body-md text-body-md text-on-surface-variant"><fmt:message key="profile.security.googleAccount" /></p>
+              </div>
             </c:otherwise>
-        </c:choose>
+          </c:choose>
+        </section>
+      </c:when>
 
-        <h2 class="profile-name">${user.username}</h2>
-        <p class="profile-email">${user.email}</p>
+      <%-- ===== Diğer sekmeler (placeholder) ===== --%>
+      <c:otherwise>
+        <section class="bg-surface-container-lowest rounded-xl soft-shadow p-8">
+          <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6"><fmt:message key="profile.tab.${tab}" /></h2>
+          <p class="font-body-md text-body-md text-on-surface-variant"><fmt:message key="profile.coming_soon" /></p>
+        </section>
+      </c:otherwise>
+    </c:choose>
+  </div>
+</main>
 
-        <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label"><spring:message code="profile.provider" text="Giriş Yöntemi"/></span>
-                <span class="info-value">
-                    <c:choose>
-                        <c:when test="${user.authProvider == 'LOCAL'}">E-posta</c:when>
-                        <c:when test="${user.authProvider == 'GOOGLE'}">Google</c:when>
-                        <c:otherwise>${user.authProvider}</c:otherwise>
-                    </c:choose>
-                </span>
-            </div>
-            <div class="info-item">
-                <span class="info-label"><spring:message code="profile.joined" text="Katılım Tarihi"/></span>
-                <span class="info-value">
-                    <fmt:parseDate value="${user.createdAt}" pattern="yyyy-MM-dd'T'HH:mm" var="parsedDate" type="both" />
-                    <fmt:formatDate value="${parsedDate}" pattern="dd.MM.yyyy" />
-                </span>
-            </div>
-        </div>
-
-        <a href="<c:url value='/api/auth/logout' />" class="btn-logout">
-            <i class="bi bi-box-arrow-right"></i> <spring:message code="profile.logout" text="Çıkış Yap"/>
-        </a>
-    </div>
-</div>
-
-<footer>
-    <spring:message code="footer.text"/>
-</footer>
-
-</body>
-</html>
+<jsp:include page="/WEB-INF/views/layout/site-footer.jsp" />
+<jsp:include page="/WEB-INF/views/layout/footer.jsp" />
