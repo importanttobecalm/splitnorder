@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <jsp:include page="/WEB-INF/views/layout/head.jsp">
   <jsp:param name="titleKey" value="studio.title" />
 </jsp:include>
@@ -21,7 +22,7 @@
       </div>
       <div>
         <h1 class="font-headline-md text-headline-md text-on-surface mb-1">${job.originalFilename}</h1>
-        <p class="font-mono-label text-mono-label text-on-surface-variant uppercase">${job.modelUsed} · <fmt:formatDate value="${job.createdAtDate}" type="both" dateStyle="short" timeStyle="short" /></p>
+        <p class="font-mono-label text-mono-label text-on-surface-variant uppercase">${job.modelUsed} · ${fn:replace(fn:substring(job.createdAt, 0, 16), "T", " ")}</p>
       </div>
     </div>
     <a href="${ctx}/job/${job.id}/download-all" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2 shadow-sm">

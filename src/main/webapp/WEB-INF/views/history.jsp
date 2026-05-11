@@ -82,9 +82,7 @@
                   </c:otherwise>
                 </c:choose>
               </div>
-              <c:if test="${not empty job.durationLabel}">
-                <div class="absolute bottom-3 right-3 bg-inverse-surface/80 backdrop-blur-sm px-2 py-1 rounded-lg text-on-primary font-mono-numeric text-[12px]">${job.durationLabel}</div>
-              </c:if>
+              <div class="absolute bottom-3 right-3 bg-inverse-surface/80 backdrop-blur-sm px-2 py-1 rounded-lg text-on-primary font-mono-numeric text-[10px] uppercase">${job.modelUsed}</div>
             </div>
             <div class="p-4">
               <h3 class="font-body-sm text-body-sm font-bold text-on-surface truncate">${job.originalFilename}</h3>
@@ -97,7 +95,7 @@
               </div>
               <div class="mt-3 pt-3 border-t border-outline-variant/30 flex items-center justify-between">
                 <span class="font-body-sm text-[12px] text-on-surface-variant">
-                  <fmt:formatDate value="${job.createdAtDate}" type="both" dateStyle="short" timeStyle="short" />
+                  ${fn:replace(fn:substring(job.createdAt, 0, 16), "T", " ")}
                 </span>
                 <span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">arrow_forward</span>
               </div>
@@ -143,7 +141,7 @@
                   </c:choose>
                 </td>
                 <td class="px-6 py-4 font-body-sm text-on-surface-variant">
-                  <fmt:formatDate value="${job.createdAtDate}" type="both" dateStyle="short" timeStyle="short" />
+                  ${fn:replace(fn:substring(job.createdAt, 0, 16), "T", " ")}
                 </td>
                 <td class="px-6 py-4 text-right">
                   <a href="${ctx}/job/${job.id}/result" class="text-primary hover:text-primary-container">

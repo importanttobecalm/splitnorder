@@ -57,7 +57,7 @@
               </div>
               <div class="flex flex-col overflow-hidden">
                 <span class="font-body-lg text-body-lg text-on-surface font-semibold truncate max-w-xs">${selectedFile.originalFilename}</span>
-                <span class="font-mono-label text-mono-label text-outline uppercase mt-1">${selectedFile.formatLabel}</span>
+                <span class="font-mono-label text-mono-label text-outline uppercase mt-1">${selectedFile.contentType}</span>
               </div>
             </div>
             <div class="flex items-center gap-4">
