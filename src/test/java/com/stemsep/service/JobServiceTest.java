@@ -12,6 +12,23 @@ import org.mockito.MockitoAnnotations;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * {@link JobService} için birim testleri.
+ *
+ * <p>Service katmanı DAO + Inference servisi arasında iş kuralı orkestrasyonu
+ * yapar. Bu testler Service'in:
+ * <ul>
+ *   <li>Job'u ID ile getirebildiğini,</li>
+ *   <li>Job durumunu güncelleyebildiğini (PROCESSING → COMPLETED/FAILED),</li>
+ *   <li>COMPLETED'a geçişte {@code completedAt} zamanını set ettiğini,</li>
+ *   <li>FAILED'a geçişte {@code completedAt}'i set etmediğini,</li>
+ *   <li>Olmayan Job için sessizce çıktığını (NPE fırlatmadığını)</li>
+ * </ul>
+ * doğrular.</p>
+ *
+ * <p><b>Slayt referansı:</b> Service Sınıfları (@Service + @Transactional) —
+ * Controller'dan gelen iş süreçlerini karşılar, DAO ile veritabanına yazar.</p>
+ */
 public class JobServiceTest {
 
     @Mock
@@ -28,6 +45,7 @@ public class JobServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    /** Var olan Job'un ID ile getirilebildiğini ve alanlarının korunduğunu doğrular. */
     @Test
     public void testGetJobReturnsJobWhenExists() {
         Job job = new Job();
@@ -43,6 +61,7 @@ public class JobServiceTest {
         assertEquals(JobStatus.PENDING, result.getStatus());
     }
 
+    /** Olmayan Job için {@code null} dönüşü — controller bunu 404 sayfasına çevirir. */
     @Test
     public void testGetJobReturnsNullWhenNotExists() {
         when(jobDao.findById(999L)).thenReturn(null);
@@ -51,6 +70,11 @@ public class JobServiceTest {
         assertNull(result);
     }
 
+    /**
+     * Job COMPLETED'a geçince servis {@code completedAt} zamanını set eder ve
+     * DAO {@code update}'i çağrılır. Bu, "ne zaman bitti?" gösteren UI için
+     * gereklidir (history sayfasında tarih kolonu).
+     */
     @Test
     public void testUpdateJobStatusToCompleted() {
         Job job = new Job();
@@ -66,6 +90,11 @@ public class JobServiceTest {
         verify(jobDao).update(job);
     }
 
+    /**
+     * Job FAILED'a geçince servis {@code completedAt}'i SET ETMEZ — başarısız
+     * görev "tamamlanmış" sayılmaz. Bu davranış kullanıcıya farklı UI mesajı
+     * göstermek için önemli.
+     */
     @Test
     public void testUpdateJobStatusToFailed() {
         Job job = new Job();
@@ -81,6 +110,11 @@ public class JobServiceTest {
         verify(jobDao).update(job);
     }
 
+    /**
+     * Olmayan Job için Service exception fırlatmaz, sadece DAO update'i
+     * çağırmaz. Bu, sessiz no-op davranışı; Controller'da {@code getJob()}
+     * zaten {@code null} dönüşü yakalar.
+     */
     @Test
     public void testUpdateJobStatusNullJob() {
         when(jobDao.findById(999L)).thenReturn(null);

@@ -3,31 +3,42 @@ package com.stemsep.integration;
 import com.stemsep.config.HibernateConfig;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Spring context + Hibernate SessionFactory + Oracle Cloud MySQL canlı bağlantı
- * testi.
- * Çalıştırmadan önce: bastion SSH tunnel açık olmalı (localhost:3306 →
- * 10.0.1.212:3306).
+ * Spring kontekst + Hibernate SessionFactory + Oracle Cloud MySQL canlı bağlantı testi.
  *
- * Sadece persistence katmanını bootstrap eder (WebConfig'i hariç tutar —
- * ServletContext istemesin diye).
+ * <p>Bu test sınıfı, Spring uygulama bağlamının (ApplicationContext) tamamen
+ * yüklenip, Hibernate {@link SessionFactory} bean'inin Spring konteynerinden
+ * alınabildiğini ve gerçek MySQL veritabanına bağlanılıp basit yazma/okuma
+ * round-trip'inin başarılı olduğunu doğrular.</p>
+ *
+ * <p><b>Çalıştırma önkoşulu:</b> bastion SSH tunnel açık olmalı
+ * (localhost:3306 → Oracle Cloud MySQL 10.0.1.212:3306). Bu yüzden varsayılan
+ * olarak {@link Disabled} ile devre dışı bırakılmıştır; CI/CD pipeline'ında veya
+ * canlı veritabanı erişimi olduğunda elle açılır.</p>
+ *
+ * <p><b>Slayt referansı:</b> JUnit 5 + Spring entegrasyonu (BM470 Servlet & JSP
+ * ders sunumları, "Birim Testleri" bölümü).</p>
  */
-@Ignore
+@Disabled("Bastion SSH tunnel + canlı Oracle Cloud MySQL gerektiriyor")
 public class OracleMySQLConnectionTest {
 
+    /**
+     * Persistence katmanını izole olarak başlatan iç konfigürasyon.
+     * {@code WebConfig} dahil edilmez (ServletContext beklemesin diye).
+     */
     @Configuration
     @Import(HibernateConfig.class)
     @PropertySource(value = "classpath:hibernate.properties", encoding = "UTF-8")
@@ -37,42 +48,62 @@ public class OracleMySQLConnectionTest {
 
     private static AnnotationConfigApplicationContext ctx;
 
-    @BeforeClass
+    /** Tüm test sınıfı için tek bir Spring kontekst başlatılır (pahalı işlem). */
+    @BeforeAll
     public static void setUp() {
         ctx = new AnnotationConfigApplicationContext(PersistenceOnlyConfig.class);
     }
 
-    @AfterClass
+    /** Sınıf testleri bittiğinde kontekst temizce kapatılır. */
+    @AfterAll
     public static void tearDown() {
-        if (ctx != null)
+        if (ctx != null) {
             ctx.close();
+        }
     }
 
+    /**
+     * Test 1: Spring bağlamının başlamasını ve SessionFactory bean'inin
+     * konteynerden alınabildiğini doğrular. Bu, Hibernate konfigürasyonunun
+     * (c3p0, dialect, mapping) hatasız çözüldüğünün ilk göstergesidir.
+     */
     @Test
     public void springContextStartsAndSessionFactoryIsAvailable() {
         SessionFactory sf = ctx.getBean(SessionFactory.class);
-        assertNotNull("SessionFactory bean Spring container'dan alınamadı", sf);
-        assertTrue("SessionFactory beklenmedik şekilde kapalı", !sf.isClosed());
+        assertNotNull(sf, "SessionFactory bean Spring container'dan alınamadı");
+        assertTrue(!sf.isClosed(), "SessionFactory beklenmedik şekilde kapalı");
     }
 
+    /**
+     * Test 2: SessionFactory üzerinden gerçek bir oturum açıp MySQL sunucusunun
+     * sürüm bilgisini sorgular. Bu test, c3p0 bağlantı havuzunun JDBC üzerinden
+     * gerçek bir DB ile el sıkıştığını ve sürümün beklenen 8.x/9.x aralığında
+     * olduğunu doğrular.
+     */
     @Test
     public void canOpenSessionAndQueryMySQLVersion() {
         SessionFactory sf = ctx.getBean(SessionFactory.class);
         try (Session session = sf.openSession()) {
             String version = session.doReturningWork(conn -> {
                 try (var stmt = conn.createStatement();
-                        var rs = stmt.executeQuery("SELECT VERSION()")) {
+                     var rs = stmt.executeQuery("SELECT VERSION()")) {
                     rs.next();
                     return rs.getString(1);
                 }
             });
-            assertNotNull("MySQL VERSION() null döndü", version);
+            assertNotNull(version, "MySQL VERSION() null döndü");
             System.out.println(">>> Bağlanılan MySQL versiyonu: " + version);
-            assertTrue("Beklenen MySQL 8/9 versiyonu değil: " + version,
-                    version.startsWith("8") || version.startsWith("9"));
+            assertTrue(version.startsWith("8") || version.startsWith("9"),
+                    "Beklenen MySQL 8/9 versiyonu değil: " + version);
         }
     }
 
+    /**
+     * Test 3: Transaction içinde tablo oluşturma, kayıt ekleme/güncelleme,
+     * okuma ve tablo silme akışını tam bir round-trip ile doğrular. Bu test,
+     * Hibernate transaction yönetimi + JDBC DDL desteğinin uçtan uca
+     * çalıştığını gösterir.
+     */
     @Test
     public void canCreateAndDropTestTable() {
         SessionFactory sf = ctx.getBean(SessionFactory.class);
@@ -93,7 +124,7 @@ public class OracleMySQLConnectionTest {
                 }
             });
             session.getTransaction().commit();
-            assertTrue("Yazma/okuma round-trip başarısız", "ok".equals(msg));
+            assertTrue("ok".equals(msg), "Yazma/okuma round-trip başarısız");
             System.out.println(">>> Yazma/okuma/silme round-trip OK");
         }
     }
