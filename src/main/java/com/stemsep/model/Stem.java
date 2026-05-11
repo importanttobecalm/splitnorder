@@ -1,9 +1,17 @@
 package com.stemsep.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "stems")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Stem {
 
     @Id
@@ -25,23 +33,4 @@ public class Stem {
 
     @Column(name = "download_url")
     private String downloadUrl;
-
-    // Getters & Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public Job getJob() { return job; }
-    public void setJob(Job job) { this.job = job; }
-
-    public String getStemType() { return stemType; }
-    public void setStemType(String stemType) { this.stemType = stemType; }
-
-    public String getFilePath() { return filePath; }
-    public void setFilePath(String filePath) { this.filePath = filePath; }
-
-    public Long getFileSize() { return fileSize; }
-    public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
-
-    public String getDownloadUrl() { return downloadUrl; }
-    public void setDownloadUrl(String downloadUrl) { this.downloadUrl = downloadUrl; }
 }

@@ -1,12 +1,21 @@
 package com.stemsep.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "jobs")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Job {
 
     @Id
@@ -46,35 +55,4 @@ public class Job {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
-
-    // Getters & Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-
-    public String getOriginalFilename() { return originalFilename; }
-    public void setOriginalFilename(String originalFilename) { this.originalFilename = originalFilename; }
-
-    public String getOriginalFilePath() { return originalFilePath; }
-    public void setOriginalFilePath(String originalFilePath) { this.originalFilePath = originalFilePath; }
-
-    public JobStatus getStatus() { return status; }
-    public void setStatus(JobStatus status) { this.status = status; }
-
-    public String getModelUsed() { return modelUsed; }
-    public void setModelUsed(String modelUsed) { this.modelUsed = modelUsed; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getCompletedAt() { return completedAt; }
-    public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-
-    public List<Stem> getStems() { return stems; }
-    public void setStems(List<Stem> stems) { this.stems = stems; }
 }
