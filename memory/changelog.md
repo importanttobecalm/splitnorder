@@ -6,6 +6,19 @@ updated: 2026-05-09
 ---
 
 ## 2026-05-11
+- refactor: **Track B backend slayt-uyumlu temizlik tamamlandı** (7 commit, src/main/java net -402 satır). Sebep: AI-stili over-engineered backend → slaytlardan birebir savunulabilir parçalar.
+  - B.1 User/Job/Stem entity → Lombok (@Getter/@Setter/@NoArgsConstructor/@AllArgsConstructor).
+  - B.2 `src/main/java/com/stemsep/exception/` altına 8 custom `@ResponseStatus` RuntimeException (UserNotFound 404, InvalidCredentials 401, EmailExists/UsernameExists 409, EmailNotVerified 403, InvalidToken 404, GoogleAuth/InferenceFailed 502).
+  - B.3 AuthService: BCrypt → SHA-256 (yeni `util/PasswordHasher`); `IllegalArgumentException("CODE")` → custom exception; verifyEmail/resendVerificationEmail artık void. 208→134 satır.
+  - B.4 AuthController: class-level `@RequestMapping("/auth")` + `@RequestParam` form-based POST; `ResponseEntity<Map>` + regex email/şifre validasyonu kaldırıldı; başarılı login `session.setAttribute` + `redirect:/`; başarısız `model.addAttribute("error")` + JSP. Google OAuth + logout + profile JSP DOKUNMA kuralı için ayrı `GoogleAuthController` (`/api/auth/*`) ile çıkarıldı (spec'teki `/auth/google/login` yerine). HomeController'dan `/auth/login` + `/auth/register` GET'leri AuthController'a taşındı. 358 → ~75 satır.
+  - B.5 EmailService: ~50 satır inline CSS HTML template silindi; düz text `setText(...)`. 139→61 satır.
+  - B.6 ColabInferenceService: `MAX_POLL_ATTEMPTS` polling + `mockProcessing` fallback silindi; tek senkron `POST /api/separate` (readTimeout=120s); hata → `InferenceFailedException`. 257→108 satır. (Demucs ~8 sn — bkz. memory/gotchas.md)
+  - B.7 AuthInterceptor: `localhost:5173` redirect → `${ctx}/auth/login`; whitelist `/static/**`, `/auth/**`, `/api/auth/**`.
+  - B.8 RequestLoggingInterceptor: preHandle'da `getParameterMap()` (password/token/secret maskeleme), postHandle'da view name + model, afterCompletion'da status + süre. Rubrik "istek parametre ve dönüş görüntüsü loglara" maddesi karşılığı.
+  - B.9 `log4j.properties` zaten slayt birebir (RollingFileAppender, `${catalina.base}/logs/bm470.log`, 10MB, 10 backup) — NotebookLM ile teyit edildi. `logs/` zaten .gitignore'da. Değişiklik gerekmedi.
+  - B.10 pom.xml'den `spring-security-crypto` (BCrypt) kaldırıldı. `jackson-databind` (Google OAuth) + `jakarta.mail` korunuyor.
+  - Build: `mvn -Dmaven.test.skip=true compile` ✅
+  - **Pre-existing gotcha:** `src/test/java/com/stemsep/integration/OracleMySQLConnectionTest.java` hâlâ JUnit 4 import'larıyla (Ignore/BeforeClass/AfterClass/Test). pom'da junit:junit yok → `mvn test` compile fail. Memory'deki `-Dtest='!OracleMySQLConnectionTest'` trick'i Surefire excludesi olduğundan compile'ı atlamıyor. Migrate veya sil → ayrı gotcha olarak ele alınmalı.
 - docs: Track C — proje raporu Markdown taslağı yazıldı (`docs/report/rapor.md`) + mimari/ER/sequence mermaid kaynakları (`docs/report/diagrams/*.mmd`) + ekran görüntüsü dizini (`docs/report/screenshots/.gitkeep`). Sablon.docx'e bölüm bölüm kopyala-yapıştır için hazır: kapak, BEYAN, AI Beyan, Teşekkür, Özet/Abstract, 1-10 ana bölümler, Request URI tablosu (18 endpoint), bileşen tabloları (Config/Controller/Service/DAO/Interceptor), açıklamalı 20 birim test listesi, kaynak kod kesit örnekleri (UserDao Criteria, WebAppInitializer, RequestLoggingInterceptor). Track A (JSP) ve Track B (backend) paralel çalıştığı için kod dosyalarına dokunulmadı; ekran görüntüleri Track A bitince doldurulacak yer tutucu olarak işaretlendi. Sebep: rapor teslimi 13.05.2026.
 
 ## 2026-05-09
