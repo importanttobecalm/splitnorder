@@ -1,6 +1,7 @@
 package com.stemsep.controller;
 
 import com.stemsep.model.Job;
+import com.stemsep.model.User;
 import com.stemsep.service.JobService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,11 @@ public class HistoryController {
 
     @GetMapping("/history")
     public String showHistory(HttpSession session, Model model) {
-        List<Job> jobs = jobService.getJobsBySession(session.getId());
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
+        List<Job> jobs = jobService.getJobsByUser(user.getId());
         model.addAttribute("jobs", jobs);
         return "history";
     }

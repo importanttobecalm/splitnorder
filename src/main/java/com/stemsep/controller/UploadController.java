@@ -1,6 +1,7 @@
 package com.stemsep.controller;
 
 import com.stemsep.model.Job;
+import com.stemsep.model.User;
 import com.stemsep.service.JobService;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -52,7 +53,12 @@ public class UploadController {
                 return "redirect:/upload";
             }
 
-            Job job = jobService.createJob(session.getId(), file, model);
+            User user = (User) session.getAttribute("user");
+            if (user == null) {
+                return "redirect:/auth/login"; // Bu duruma AuthInterceptor sayesinde normalde düşmeyecek
+            }
+
+            Job job = jobService.createJob(user, file, model);
             jobService.processJobAsync(job.getId());
 
             return "redirect:/job/" + job.getId();

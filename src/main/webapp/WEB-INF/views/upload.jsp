@@ -333,7 +333,7 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="/">
+        <a class="navbar-brand" href="<c:url value='/' />">
             <i class="bi bi-soundwave"></i> AI StemSep
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -341,9 +341,25 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/"><spring:message code="nav.home"/></a></li>
-                <li class="nav-item"><a class="nav-link active" href="/upload"><spring:message code="nav.upload"/></a></li>
-                <li class="nav-item"><a class="nav-link" href="/history"><spring:message code="nav.history"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/' />"><spring:message code="nav.home"/></a></li>
+                <li class="nav-item"><a class="nav-link active" href="<c:url value='/upload' />"><spring:message code="nav.upload"/></a></li>
+                <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
+            </ul>
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/auth/profile' />">
+                        <i class="bi bi-person-circle"></i>
+                        <c:choose>
+                            <c:when test="${not empty sessionScope.user}">${sessionScope.user.username}</c:when>
+                            <c:otherwise><spring:message code="nav.profile"/></c:otherwise>
+                        </c:choose>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/auth/logout' />">
+                        <i class="bi bi-box-arrow-right"></i> <spring:message code="nav.logout"/>
+                    </a>
+                </li>
             </ul>
             <div class="lang-switch">
                 <a href="?lang=tr" class="lang-btn active">TR</a>
@@ -370,7 +386,7 @@
             </div>
         </c:if>
 
-        <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <form id="uploadForm" action="<c:url value='/upload' />" method="post" enctype="multipart/form-data">
 
             <!-- Dropzone -->
             <div class="dropzone" id="dropzone">
@@ -396,9 +412,9 @@
             <div class="model-section">
                 <label><spring:message code="upload.model.label"/></label>
                 <div class="model-options">
-                    <div class="model-option selected" data-model="mdx_extra">
-                        <input type="radio" name="model" value="mdx_extra" checked>
-                        <div class="mo-name">MDX-Net</div>
+                    <div class="model-option selected" data-model="htdemucs">
+                        <input type="radio" name="model" value="htdemucs" checked>
+                        <div class="mo-name">HTDemucs</div>
                         <div class="mo-desc"><spring:message code="upload.model.mdx"/></div>
                     </div>
                     <div class="model-option" data-model="htdemucs_ft">

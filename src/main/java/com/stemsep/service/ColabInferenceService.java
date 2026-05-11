@@ -23,10 +23,13 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-
+11
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 
 /**
@@ -284,7 +287,10 @@ public class ColabInferenceService {
      * Stem kayıtlarını DB'de oluştur. Dosyalar Colab'da kalır;
      * downloadUrl mutlak Colab URL'i olur — tarayıcı doğrudan oradan indirir.
      */
-    private void createStemRecords(Job job) {
+    private void createStemRecords(Job job) throws IOException {
+        Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId())).toAbsolutePath();
+        Files.createDirectories(stemsDir);
+
         String[] stemTypes = {"vocals", "drums", "bass", "other"};
         String base = colabApiUrl + "/api/stem/" + job.getId() + "/";
 
