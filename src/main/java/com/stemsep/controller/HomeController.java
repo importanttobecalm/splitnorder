@@ -11,4 +11,14 @@ public class HomeController {
     public String home(Model model) {
         return "home";
     }
+
+    @GetMapping("/auth/login")
+    public String loginPage() {
+        return "auth/login";
+    }
+
+    @GetMapping("/auth/register")
+    public String registerPage() {
+        return "auth/register";
+    }
 }

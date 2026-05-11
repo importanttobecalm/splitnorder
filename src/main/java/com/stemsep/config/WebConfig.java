@@ -66,7 +66,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(new RequestLoggingInterceptor());
         registry.addInterceptor(new AuthInterceptor())
                 .addPathPatterns("/**")
-                .excludePathPatterns("/static/**", "/api/auth/**");
+                .excludePathPatterns("/static/**", "/api/auth/**", "/auth/**");
     }
 
     @Override

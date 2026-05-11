@@ -12,8 +12,9 @@ public class AuthInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         
         // Statik kaynaklar ve API auth endpointleri için geçişe izin ver
-        if (path.startsWith(request.getContextPath() + "/static/") || 
-            path.startsWith(request.getContextPath() + "/api/auth/")) {
+        if (path.startsWith(request.getContextPath() + "/static/") ||
+            path.startsWith(request.getContextPath() + "/api/auth/") ||
+            path.startsWith(request.getContextPath() + "/auth/")) {
             return true;
         }
 
