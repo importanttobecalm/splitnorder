@@ -67,10 +67,11 @@ public class EmailService {
 
     /**
      * E-posta doğrulama maili gönderir.
+     * Doğrulama linki APP_BASE_URL (hibernate.properties) + /auth/verify-email path'i ile kurulur.
      */
     public void sendVerificationEmail(String to, String username, String token, String lang) {
-        String baseUrl = "http://localhost:5173"; // React dev server
-        String verifyUrl = baseUrl + "/verify-email?token=" + token;
+        String baseUrl = env.getProperty("APP_BASE_URL", "http://localhost:8080/stemsep");
+        String verifyUrl = baseUrl + "/auth/verify-email?token=" + token;
 
         String subject;
         String htmlContent;

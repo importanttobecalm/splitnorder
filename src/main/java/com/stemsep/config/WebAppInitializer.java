@@ -1,6 +1,5 @@
 package com.stemsep.config;
 
-import jakarta.servlet.Filter;
 import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletRegistration;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
@@ -20,16 +19,6 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     @Override
     protected String[] getServletMappings() {
         return new String[]{ "/" };
-    }
-
-    /**
-     * Servlet filter'larını DispatcherServlet'e bağlar.
-     * getServletFilters() — Spring'in standart yöntemi, filter'ı
-     * DispatcherServlet'in TÜM URL pattern'larına otomatik maplar.
-     */
-    @Override
-    protected Filter[] getServletFilters() {
-        return new Filter[]{ new CorsFilter() };
     }
 
     @Override

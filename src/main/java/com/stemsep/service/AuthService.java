@@ -182,6 +182,27 @@ public class AuthService {
     }
 
     /**
+     * DEV BYPASS: Auth devre dışıyken interceptor'ın session'a koyacağı dummy user'ı sağlar.
+     * Yoksa oluşturur (emailVerified=true, hashlenmiş rastgele şifre — login yapılmaz).
+     */
+    @Transactional
+    public User getOrCreateDevUser() {
+        String devEmail = "dev@local";
+        User dev = userDao.findByEmail(devEmail);
+        if (dev != null) return dev;
+
+        dev = new User();
+        dev.setUsername("dev");
+        dev.setEmail(devEmail);
+        dev.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        dev.setAuthProvider("LOCAL");
+        dev.setEmailVerified(true);
+        userDao.save(dev);
+        logger.info("DEV bypass kullanıcısı oluşturuldu: {}", devEmail);
+        return dev;
+    }
+
+    /**
      * Doğrulama mailini tekrar gönderir.
      */
     @Transactional

@@ -8,33 +8,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
+import java.util.regex.Pattern;
 
 /**
- * Kimlik doğrulama REST Controller'ı.
- * Login, Register, Google OAuth ve e-posta doğrulama endpoint'leri.
+ * Kimlik doğrulama Controller'ı (JSP form-based).
+ * Login, Register, Logout, Profile, e-posta doğrulama ve Google OAuth.
  */
 @Controller
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$"
+    );
 
     @Autowired
     private AuthService authService;
@@ -44,190 +50,177 @@ public class AuthController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // ======================== LOCAL REGISTER ========================
+    // ======================== LOGIN ========================
 
-    @PostMapping("/register")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> register(@RequestBody Map<String, String> body) {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            String username = body.get("username");
-            String email = body.get("email");
-            String password = body.get("password");
-            String lang = body.getOrDefault("lang", "tr");
-
-            // Validasyon
-            if (username == null || username.trim().isEmpty()) {
-                response.put("success", false);
-                response.put("error", "USERNAME_REQUIRED");
-                return ResponseEntity.badRequest().body(response);
-            }
-            if (email == null || email.trim().isEmpty() || !isValidEmail(email.trim())) {
-                response.put("success", false);
-                response.put("error", "INVALID_EMAIL");
-                return ResponseEntity.badRequest().body(response);
-            }
-            if (password == null || password.length() < 8) {
-                response.put("success", false);
-                response.put("error", "PASSWORD_TOO_SHORT");
-                return ResponseEntity.badRequest().body(response);
-            }
-            // Şifre güvenlik kontrolü
-            if (!isPasswordStrong(password)) {
-                response.put("success", false);
-                response.put("error", "PASSWORD_WEAK");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            User user = authService.registerLocal(username.trim(), email.trim().toLowerCase(), password, lang);
-
-            response.put("success", true);
-            response.put("message", "REGISTRATION_SUCCESS");
-            response.put("emailVerificationRequired", true);
-            response.put("user", buildUserResponse(user));
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-        } catch (IllegalArgumentException e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        } catch (Exception e) {
-            logger.error("Kayıt sırasında beklenmeyen hata", e);
-            response.put("success", false);
-            response.put("error", "INTERNAL_ERROR");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    @GetMapping("/login")
+    public String showLogin(HttpSession session,
+                            @RequestParam(value = "registered", required = false) String registered,
+                            @RequestParam(value = "verified", required = false) String verified,
+                            @RequestParam(value = "resent", required = false) String resent,
+                            @RequestParam(value = "error", required = false) String error,
+                            Model model) {
+        if (session.getAttribute("user") != null) {
+            return "redirect:/";
         }
+        if (registered != null) model.addAttribute("info", "auth.info.registered");
+        if (verified != null)   model.addAttribute("info", "auth.info.verified");
+        if (resent != null)     model.addAttribute("info", "auth.info.resent");
+        if (error != null)      model.addAttribute("error", error);
+        return "login";
     }
-
-    // ======================== LOCAL LOGIN ========================
 
     @PostMapping("/login")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> body, HttpSession session) {
-        Map<String, Object> response = new HashMap<>();
-
+    public String doLogin(@RequestParam("email") String email,
+                          @RequestParam("password") String password,
+                          HttpSession session,
+                          RedirectAttributes ra,
+                          Model model) {
         try {
-            String email = body.get("email");
-            String password = body.get("password");
-
-            if (email == null || email.trim().isEmpty()) {
-                response.put("success", false);
-                response.put("error", "EMAIL_REQUIRED");
-                return ResponseEntity.badRequest().body(response);
+            String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+            if (normalizedEmail.isEmpty()) {
+                model.addAttribute("error", "EMAIL_REQUIRED");
+                model.addAttribute("email", normalizedEmail);
+                return "login";
             }
-            if (password == null || password.trim().isEmpty()) {
-                response.put("success", false);
-                response.put("error", "PASSWORD_REQUIRED");
-                return ResponseEntity.badRequest().body(response);
+            if (password == null || password.isEmpty()) {
+                model.addAttribute("error", "PASSWORD_REQUIRED");
+                model.addAttribute("email", normalizedEmail);
+                return "login";
             }
 
-            User user = authService.loginLocal(email.trim().toLowerCase(), password);
-            
-            // Başarılı giriş - session oluştur (ÇOK ÖNEMLİ MANTIKSAL HATA DÜZELTMESİ)
+            User user = authService.loginLocal(normalizedEmail, password);
             session.setAttribute("user", user);
-
-            response.put("success", true);
-            response.put("user", buildUserResponse(user));
-
-            return ResponseEntity.ok(response);
+            return "redirect:/";
 
         } catch (IllegalArgumentException e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-
-            HttpStatus status = "EMAIL_NOT_VERIFIED".equals(e.getMessage())
-                    ? HttpStatus.FORBIDDEN
-                    : HttpStatus.UNAUTHORIZED;
-            return ResponseEntity.status(status).body(response);
-
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("email", email == null ? "" : email.trim());
+            return "login";
         } catch (Exception e) {
             logger.error("Giriş sırasında beklenmeyen hata", e);
-            response.put("success", false);
-            response.put("error", "INTERNAL_ERROR");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            model.addAttribute("error", "INTERNAL_ERROR");
+            return "login";
         }
     }
+
+    // ======================== REGISTER ========================
+
+    @GetMapping("/register")
+    public String showRegister(HttpSession session) {
+        if (session.getAttribute("user") != null) {
+            return "redirect:/";
+        }
+        return "register";
+    }
+
+    @PostMapping("/register")
+    public String doRegister(@RequestParam("username") String username,
+                             @RequestParam("email") String email,
+                             @RequestParam("password") String password,
+                             @RequestParam(value = "lang", defaultValue = "tr") String lang,
+                             RedirectAttributes ra,
+                             Model model) {
+        try {
+            String trimmedUsername = username == null ? "" : username.trim();
+            String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+
+            if (trimmedUsername.isEmpty()) {
+                return registerError(model, trimmedUsername, normalizedEmail, "USERNAME_REQUIRED");
+            }
+            if (normalizedEmail.isEmpty() || !isValidEmail(normalizedEmail)) {
+                return registerError(model, trimmedUsername, normalizedEmail, "INVALID_EMAIL");
+            }
+            if (password == null || password.length() < 8) {
+                return registerError(model, trimmedUsername, normalizedEmail, "PASSWORD_TOO_SHORT");
+            }
+            if (!isPasswordStrong(password)) {
+                return registerError(model, trimmedUsername, normalizedEmail, "PASSWORD_WEAK");
+            }
+
+            authService.registerLocal(trimmedUsername, normalizedEmail, password, lang);
+            ra.addAttribute("registered", "1");
+            return "redirect:/auth/login";
+
+        } catch (IllegalArgumentException e) {
+            return registerError(model, username, email, e.getMessage());
+        } catch (Exception e) {
+            logger.error("Kayıt sırasında beklenmeyen hata", e);
+            return registerError(model, username, email, "INTERNAL_ERROR");
+        }
+    }
+
+    private String registerError(Model model, String username, String email, String code) {
+        model.addAttribute("error", code);
+        model.addAttribute("username", username);
+        model.addAttribute("email", email);
+        return "register";
+    }
+
+    // ======================== LOGOUT ========================
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
         if (session != null) {
             session.invalidate();
         }
-        // React login sayfasına yönlendir (veya mevcut login yapınıza göre)
-        return "redirect:http://localhost:5173/login";
+        return "redirect:/auth/login";
     }
 
+    // ======================== PROFILE ========================
+
     @GetMapping("/profile")
-    public String profile(HttpSession session, Map<String, Object> model) {
+    public String profile(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:http://localhost:5173/login";
+            return "redirect:/auth/login";
         }
-        model.put("user", user);
+        model.addAttribute("user", user);
         return "profile";
     }
 
     // ======================== EMAIL VERIFICATION ========================
 
     @GetMapping("/verify-email")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> verifyEmail(@RequestParam("token") String token) {
-        Map<String, Object> response = new HashMap<>();
-
+    public String verifyEmail(@RequestParam("token") String token, Model model) {
         boolean verified = authService.verifyEmail(token);
         if (verified) {
-            response.put("success", true);
-            response.put("message", "EMAIL_VERIFIED");
-        } else {
-            response.put("success", false);
-            response.put("error", "INVALID_OR_EXPIRED_TOKEN");
+            return "redirect:/auth/login?verified=1";
         }
-
-        return ResponseEntity.ok(response);
+        model.addAttribute("error", "INVALID_OR_EXPIRED_TOKEN");
+        return "verify-email";
     }
 
     @PostMapping("/resend-verification")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> resendVerification(@RequestBody Map<String, String> body) {
-        Map<String, Object> response = new HashMap<>();
-
+    public String resendVerification(@RequestParam("email") String email,
+                                     @RequestParam(value = "lang", defaultValue = "tr") String lang,
+                                     RedirectAttributes ra) {
         try {
-            String email = body.get("email");
-            String lang = body.getOrDefault("lang", "tr");
-
-            if (email == null || email.trim().isEmpty()) {
-                response.put("success", false);
-                response.put("error", "EMAIL_REQUIRED");
-                return ResponseEntity.badRequest().body(response);
+            String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+            if (normalizedEmail.isEmpty()) {
+                ra.addAttribute("error", "EMAIL_REQUIRED");
+                return "redirect:/auth/login";
             }
-
-            authService.resendVerificationEmail(email.trim().toLowerCase(), lang);
-            response.put("success", true);
-            response.put("message", "VERIFICATION_RESENT");
-            return ResponseEntity.ok(response);
-
+            authService.resendVerificationEmail(normalizedEmail, lang);
+            ra.addAttribute("resent", "1");
+            return "redirect:/auth/login";
         } catch (IllegalArgumentException e) {
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            ra.addAttribute("error", e.getMessage());
+            return "redirect:/auth/login";
         } catch (Exception e) {
             logger.error("Doğrulama maili tekrar gönderilemedi", e);
-            response.put("success", false);
-            response.put("error", "INTERNAL_ERROR");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            ra.addAttribute("error", "INTERNAL_ERROR");
+            return "redirect:/auth/login";
         }
     }
 
-    // ======================== GOOGLE OAUTH (BACKEND REDIRECT) ========================
+    // ======================== GOOGLE OAUTH ========================
 
     @GetMapping("/google/login")
     public void redirectToGoogle(HttpServletResponse response) throws IOException {
         String clientId = env.getProperty("GOOGLE_CLIENT_ID");
         String redirectUri = env.getProperty("GOOGLE_REDIRECT_URI");
         String scope = "openid email profile";
-        
+
         if (clientId == null || redirectUri == null) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Google OAuth ayarları eksik.");
             return;
@@ -240,17 +233,20 @@ public class AuthController {
                 "&scope=" + URLEncoder.encode(scope, StandardCharsets.UTF_8) +
                 "&access_type=offline" +
                 "&prompt=consent";
-                
+
         response.sendRedirect(authUrl);
     }
 
     @GetMapping("/google/callback")
     public void googleCallback(@RequestParam(value = "code", required = false) String code,
+                               HttpServletRequest request,
                                HttpServletResponse response,
                                HttpSession session) throws IOException {
-        
+
+        String ctx = request.getContextPath();
+
         if (code == null || code.trim().isEmpty()) {
-            response.sendRedirect("http://localhost:5173/login?error=GOOGLE_AUTH_FAILED");
+            response.sendRedirect(ctx + "/auth/login?error=GOOGLE_AUTH_FAILED");
             return;
         }
 
@@ -259,12 +255,10 @@ public class AuthController {
             String clientSecret = env.getProperty("GOOGLE_CLIENT_SECRET");
             String redirectUri = env.getProperty("GOOGLE_REDIRECT_URI");
 
-            // Google token endpoint'ine POST
             String tokenResponse = exchangeCodeForToken(code, clientId, clientSecret, redirectUri);
             JsonNode tokenJson = objectMapper.readTree(tokenResponse);
             String accessToken = tokenJson.get("access_token").asText();
 
-            // Access token ile kullanıcı bilgilerini al
             String userInfoResponse = fetchGoogleUserInfo(accessToken);
             JsonNode userInfo = objectMapper.readTree(userInfoResponse);
 
@@ -274,20 +268,17 @@ public class AuthController {
             String picture = userInfo.has("picture") ? userInfo.get("picture").asText() : null;
 
             User user = authService.loginOrRegisterGoogle(googleId, email, name, picture);
-            
-            // Başarılı giriş - session oluştur
             session.setAttribute("user", user);
-            
-            // JSP ana sayfaya yönlendir (Uygulamanın ana sayfası)
-            response.sendRedirect("/stemsep/");
-            
+
+            response.sendRedirect(ctx + "/");
+
         } catch (Exception e) {
             logger.error("Google login callback hatası", e);
-            response.sendRedirect("http://localhost:5173/login?error=GOOGLE_AUTH_FAILED");
+            response.sendRedirect(ctx + "/auth/login?error=GOOGLE_AUTH_FAILED");
         }
     }
 
-    // ======================== YARDIMCI METODLAR ========================
+    // ======================== HELPERS ========================
 
     private String exchangeCodeForToken(String code, String clientId, String clientSecret, String redirectUri) throws Exception {
         URL url = new URL("https://oauth2.googleapis.com/token");
@@ -323,22 +314,6 @@ public class AuthController {
             return scanner.hasNext() ? scanner.next() : "";
         }
     }
-
-    private Map<String, Object> buildUserResponse(User user) {
-        Map<String, Object> userMap = new HashMap<>();
-        userMap.put("id", user.getId());
-        userMap.put("username", user.getUsername());
-        userMap.put("email", user.getEmail());
-        userMap.put("authProvider", user.getAuthProvider());
-        userMap.put("emailVerified", user.isEmailVerified());
-        userMap.put("profilePictureUrl", user.getProfilePictureUrl());
-        userMap.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
-        return userMap;
-    }
-
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-            "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$"
-    );
 
     private boolean isValidEmail(String email) {
         if (email == null || email.length() > 254) return false;

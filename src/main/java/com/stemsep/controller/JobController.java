@@ -39,7 +39,7 @@ public class JobController {
     public String showJob(@PathVariable Long id, HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:http://localhost:5173/login";
+            return "redirect:/auth/login";
         }
         
         Job job = jobService.getJob(id);
@@ -96,7 +96,9 @@ public class JobController {
      */
     @GetMapping("/{id}/download/{stemType}")
     public void downloadStem(@PathVariable Long id, @PathVariable String stemType,
-                             HttpSession session, HttpServletResponse response) throws IOException {
+                             HttpSession session,
+                             HttpServletRequest request,
+                             HttpServletResponse response) throws IOException {
         User user = (User) session.getAttribute("user");
         Job job = jobService.getJob(id);
         

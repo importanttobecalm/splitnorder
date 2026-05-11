@@ -347,8 +347,17 @@
             </ul>
             <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item">
-                    <a class="nav-link" href="<c:url value='/api/auth/profile' />">
-                        <i class="bi bi-person-circle"></i> <spring:message code="nav.profile"/>
+                    <a class="nav-link" href="<c:url value='/auth/profile' />">
+                        <i class="bi bi-person-circle"></i>
+                        <c:choose>
+                            <c:when test="${not empty sessionScope.user}">${sessionScope.user.username}</c:when>
+                            <c:otherwise><spring:message code="nav.profile"/></c:otherwise>
+                        </c:choose>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<c:url value='/auth/logout' />">
+                        <i class="bi bi-box-arrow-right"></i> <spring:message code="nav.logout"/>
                     </a>
                 </li>
             </ul>

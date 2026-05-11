@@ -21,7 +21,7 @@ public class HistoryController {
     public String showHistory(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:http://localhost:5173/login";
+            return "redirect:/auth/login";
         }
         List<Job> jobs = jobService.getJobsByUser(user.getId());
         model.addAttribute("jobs", jobs);

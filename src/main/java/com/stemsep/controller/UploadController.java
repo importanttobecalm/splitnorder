@@ -55,7 +55,7 @@ public class UploadController {
 
             User user = (User) session.getAttribute("user");
             if (user == null) {
-                return "redirect:http://localhost:5173/login"; // Bu duruma AuthInterceptor sayesinde normalde düşmeyecek
+                return "redirect:/auth/login"; // Bu duruma AuthInterceptor sayesinde normalde düşmeyecek
             }
 
             Job job = jobService.createJob(user, file, model);

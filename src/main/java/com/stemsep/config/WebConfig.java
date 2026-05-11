@@ -2,6 +2,7 @@ package com.stemsep.config;
 
 import com.stemsep.interceptor.RequestLoggingInterceptor;
 import com.stemsep.interceptor.AuthInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,13 +61,16 @@ public class WebConfig implements WebMvcConfigurer {
         return new StandardServletMultipartResolver();
     }
 
+    @Autowired
+    private AuthInterceptor authInterceptor;
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(localeChangeInterceptor());
         registry.addInterceptor(new RequestLoggingInterceptor());
-        registry.addInterceptor(new AuthInterceptor())
+        registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/static/**", "/api/auth/**");
+                .excludePathPatterns("/static/**", "/auth/**");
     }
 
     @Override

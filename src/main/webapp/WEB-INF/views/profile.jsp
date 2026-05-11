@@ -3,7 +3,7 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
-<html lang="${pageContext.response.locale.language}">
+<html lang="${pageContext.request.locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -165,7 +165,7 @@
                 <li class="nav-item"><a class="nav-link" href="<c:url value='/history' />"><spring:message code="nav.history"/></a></li>
             </ul>
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link active" href="<c:url value='/api/auth/profile' />"><i class="bi bi-person-circle"></i> <spring:message code="nav.profile" text="Profil"/></a></li>
+                <li class="nav-item"><a class="nav-link active" href="<c:url value='/auth/profile' />"><i class="bi bi-person-circle"></i> <spring:message code="nav.profile" text="Profil"/></a></li>
             </ul>
         </div>
     </div>
@@ -208,7 +208,7 @@
             </div>
         </div>
 
-        <a href="<c:url value='/api/auth/logout' />" class="btn-logout">
+        <a href="<c:url value='/auth/logout' />" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> <spring:message code="profile.logout" text="Çıkış Yap"/>
         </a>
     </div>
