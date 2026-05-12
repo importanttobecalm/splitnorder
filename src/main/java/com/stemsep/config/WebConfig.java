@@ -37,6 +37,8 @@ public class WebConfig implements WebMvcConfigurer {
         ReloadableResourceBundleMessageSource ms = new ReloadableResourceBundleMessageSource();
         ms.setBasename("classpath:messages");
         ms.setDefaultEncoding("UTF-8");
+        ms.setFallbackToSystemLocale(false);
+        ms.setDefaultLocale(new Locale("tr", "TR"));
         return ms;
     }
 
@@ -50,8 +52,18 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Bean
     public LocaleChangeInterceptor localeChangeInterceptor() {
-        LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
+        LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor() {
+            @Override
+            protected Locale parseLocaleValue(String localeValue) {
+                if (localeValue == null) return null;
+                String v = localeValue.trim().toLowerCase();
+                if (v.equals("tr") || v.startsWith("tr_") || v.startsWith("tr-")) return new Locale("tr", "TR");
+                if (v.equals("en") || v.startsWith("en_") || v.startsWith("en-")) return new Locale("en", "US");
+                return super.parseLocaleValue(localeValue);
+            }
+        };
         interceptor.setParamName("lang");
+        interceptor.setIgnoreInvalidLocale(true);
         return interceptor;
     }
 

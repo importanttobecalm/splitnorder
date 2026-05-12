@@ -2,8 +2,11 @@
 name: Changelog
 description: Anlamlı değişikliklerin tarihli listesi (en yeni üstte)
 type: project
-updated: 2026-05-09
+updated: 2026-05-12
 ---
+
+## 2026-05-12
+- fix(i18n): `?lang=tr` URL'sinin İngilizce göstermesi düzeltildi. Sebep: `LocaleChangeInterceptor` "tr"→`Locale("tr")` parse ediyor, MessageSource `messages_tr.properties` bulamayınca JVM default locale'a fallback ile `messages_en_US.properties` yüklüyordu. `WebConfig`'te `parseLocaleValue` override (tr→tr_TR, en→en_US) + `setFallbackToSystemLocale(false)` + `setDefaultLocale(tr_TR)`. Dosya: `src/main/java/com/stemsep/config/WebConfig.java`. Detay: `gotchas.md`.
 
 ## 2026-05-11
 - refactor: **Track B backend slayt-uyumlu temizlik tamamlandı** (7 commit, src/main/java net -402 satır). Sebep: AI-stili over-engineered backend → slaytlardan birebir savunulabilir parçalar.

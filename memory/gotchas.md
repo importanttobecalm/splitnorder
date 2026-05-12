@@ -58,6 +58,18 @@ updated: 2026-05-08
 **Doğru:** Notebook'ta Flask'a 3 route'u da ekle. Header `ngrok-skip-browser-warning: true` Java tarafından gönderiliyor, sıkıntı yok.
 **Bu projede uygulanan (2026-05-08):** Demucs ~8 sn sürdüğü için async/polling overhead'i değmiyor → **sync + her zaman 200** yaklaşımı seçildi. `/api/separate` Demucs'ı blocking çalıştırır 200 döner, `/api/job/{id}/status` her zaman `{"status":"completed"}` döner (Java'nın polling loop'u ilk denemede biter), `/api/stem/{id}/{type}` `send_file` ile WAV döner. Mimari olarak async daha temiz ama bu ödev için pratik tercih.
 
+## "Berkan'ın Oracle VM'i" diye bir şey YOK
+**Tuzak:** Eski memory notlarında `89.168.74.197` "Berkan'ın VM'i" olarak geçiyordu.
+**Doğru (2026-05-11 doğrulandı):** Bu projede iki Oracle Compute VM var ve **ikisi de Yusuf'un**:
+- `89.168.74.197` (instance-20260426-1519, `ssh oracle`) — stemsep Tomcat bare-metal deploy
+- `130.61.66.0` (vespay) — splitnorder.space Docker Compose canlı demo
+Berkan'ın bu projede kendi Oracle VM'i yok; SSH key paylaşımı Yusuf'un VM'lerine erişim içindir.
+
+## `?lang=tr` İngilizce gösteriyor (i18n bundle naming mismatch)
+**Semptom:** `https://splitnorder.space/?lang=tr` ve `?lang=en` ikisi de İngilizce içerik gösteriyor. TR/EN linkleri aktif renge geçmiyor.
+**Sebep:** `LocaleChangeInterceptor` default `parseLocaleValue("tr")` → `Locale("tr")` (sadece dil). MessageSource `messages_tr.properties` arıyor — yok. `setFallbackToSystemLocale` default `true` olduğu için JVM default locale'a (Mac/Linux server'da çoğunlukla `en_US`) düşüyor → `messages_en_US.properties` bulup İngilizce dönüyor. Dosyalar ADR-10 gereği `_tr_TR` / `_en_US` suffix'li.
+**Doğru:** `WebConfig.localeChangeInterceptor()` içinde `parseLocaleValue` override → `tr`→`Locale("tr","TR")`, `en`→`Locale("en","US")`. Ek olarak MessageSource'a `setFallbackToSystemLocale(false)` + `setDefaultLocale(tr_TR)` ekle, deploy edildiğinde host JVM locale'ı ne olursa olsun deterministik davranır.
+
 ## yusufun-dali ≠ origin/main
 **Tuzak:** yusufun-dali dalında yapılan docs commit'leri (PROJECT_REVIEW.md, README rewrite) main'e merge edilmedi.
 **Doğru:** main'i referans al. yusufun-dali'deki dökümanlar main'de YOK.
