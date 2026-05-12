@@ -9,3 +9,4 @@
 - [Tech Stack](project_tech_stack.md) — Versiyonlar ve mimari özet
 - [NotebookLM MCP](reference_notebooklm.md) — Ders PDF'lerine sorgu erişimi (alias: bm470)
 - 🔒 [NotebookLM-First Kuralı](feedback_notebooklm_first.md) — Kod yazmadan ÖNCE bm470 sorgula (ZORUNLU)
+- 📊 [Slayt Uyum Analizi 2026-05-12](project_slayt_uyum_analizi.md) — Slayt-dışı tespit edilen alanlar + aksiyon listesi
