@@ -6,6 +6,9 @@ updated: 2026-05-12
 ---
 
 ## 2026-05-12
+- fix(ux): `processing.jsp` görünür tam-sayfa `location.reload()` (3 sn) kaldırıldı → sessiz AJAX polling. `/job/{id}/status` JSON endpoint'i fetch ile sorgulanıyor; COMPLETED/FAILED olunca tek seferlik yönlendirme. Kullanıcı artık arka plan polling'ini görmüyor.
+- fix(ui): `processing.jsp` "Cancel" butonu kaldırıldı (POST `/job/{id}/cancel` endpoint'i yoktu — 404). Yerine processing durum rozeti.
+- feat(ui): `result.jsp` Solo/Mute butonları JS ile işlevsel (audio.muted toggle, solo aktifken diğerleri mute, görsel state primary renkle). Volume slider audio.volume'a bağlandı.
 - fix(i18n): `?lang=tr` URL'sinin İngilizce göstermesi düzeltildi. Sebep: `LocaleChangeInterceptor` "tr"→`Locale("tr")` parse ediyor, MessageSource `messages_tr.properties` bulamayınca JVM default locale'a fallback ile `messages_en_US.properties` yüklüyordu. `WebConfig`'te `parseLocaleValue` override (tr→tr_TR, en→en_US) + `setFallbackToSystemLocale(false)` + `setDefaultLocale(tr_TR)`. Dosya: `src/main/java/com/stemsep/config/WebConfig.java`. Detay: `gotchas.md`.
 
 ## 2026-05-11
@@ -50,3 +53,4 @@ updated: 2026-05-12
 - chore: memory sistemi kuruldu (MEMORY.md + çekirdek dosyalar). Sebep: oturumlar arası süreklilik. memory/
 - chore: `yusuf2` dalı origin/main 29dd84e üzerinden açıldı. Sebep: temiz başlangıç. -
 - chore: local main origin/main'e rebase edildi (1 docs commit yusufun-dali'de korunuyor). Sebep: divergent durumu temizleme. -
+- fix: result.jsp `/job/{id}/stream/{stem}` endpoint'i çağırıyordu ama JobController'da yoktu → audio player'lar 0:00/0:00 gösteriyordu. `streamStem` endpoint'i eklendi (stem + "original" desteği). JobController.java

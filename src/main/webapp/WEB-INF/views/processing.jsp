@@ -7,7 +7,13 @@
 <jsp:include page="/WEB-INF/views/layout/nav.jsp" />
 
 <%-- Job durumu: PENDING | PROCESSING | COMPLETED | FAILED --%>
-<c:set var="progress" value="${empty job.progressPercent ? 0 : job.progressPercent}" />
+<%-- Job entity'de progressPercent yok; status'tan türetilir --%>
+<c:choose>
+  <c:when test="${job.status == 'COMPLETED'}"><c:set var="progress" value="100" /></c:when>
+  <c:when test="${job.status == 'PROCESSING'}"><c:set var="progress" value="50" /></c:when>
+  <c:when test="${job.status == 'FAILED'}"><c:set var="progress" value="0" /></c:when>
+  <c:otherwise><c:set var="progress" value="10" /></c:otherwise>
+</c:choose>
 
 <main class="flex-grow flex items-center justify-center pt-12 pb-12 px-margin_mobile md:px-margin_desktop">
   <div class="w-full max-w-[760px] bg-surface-container-lowest rounded-[24px] soft-shadow p-8 md:p-[56px]">
@@ -23,13 +29,11 @@
           <p class="font-mono-label text-mono-label text-on-surface-variant mt-1">${job.modelUsed}</p>
         </div>
       </div>
-      <c:if test="${job.status != 'COMPLETED'}">
-        <form method="post" action="${ctx}/job/${job.id}/cancel">
-          <button type="submit" class="flex items-center gap-2 px-3 py-2 text-on-surface-variant hover:text-error hover:bg-error-container/50 rounded-lg transition-colors font-body-sm">
-            <span class="material-symbols-outlined text-[20px]">close</span>
-            <span class="hidden sm:inline"><fmt:message key="processing.cancel" /></span>
-          </button>
-        </form>
+      <c:if test="${job.status != 'COMPLETED' && job.status != 'FAILED'}">
+        <div class="flex items-center gap-2 px-3 py-2 text-on-surface-variant font-body-sm">
+          <span class="material-symbols-outlined text-[20px] animate-spin">sync</span>
+          <span class="hidden sm:inline"><fmt:message key="status.processing" /></span>
+        </div>
       </c:if>
     </div>
 
@@ -117,9 +121,30 @@
   </div>
 </main>
 
-<%-- Otomatik yenileme (tamamlanmamışsa 3 sn) --%>
+<%-- Arka plan polling: kullanıcı flash görmez, sadece COMPLETED/FAILED olunca tek seferlik yenileme.
+     Tam sayfa reload yerine /job/{id}/status JSON endpoint'i sessizce sorgulanır. --%>
 <c:if test="${job.status == 'PROCESSING' || job.status == 'PENDING'}">
-  <script>setTimeout(function(){location.reload();}, 3000);</script>
+<script>
+(function(){
+  var jobId = '${job.id}';
+  var statusUrl = '${ctx}/job/' + jobId + '/status';
+  var pollMs = 3000;
+  function poll(){
+    fetch(statusUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(data){
+        if (!data || !data.status) { setTimeout(poll, pollMs); return; }
+        if (data.status === 'COMPLETED' || data.status === 'FAILED') {
+          window.location.href = '${ctx}/job/' + jobId;
+        } else {
+          setTimeout(poll, pollMs);
+        }
+      })
+      .catch(function(){ setTimeout(poll, pollMs); });
+  }
+  setTimeout(poll, pollMs);
+})();
+</script>
 </c:if>
 
 <jsp:include page="/WEB-INF/views/layout/site-footer.jsp" />

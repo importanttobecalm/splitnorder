@@ -41,36 +41,33 @@
       <c:set var="color" value="${stemColors.split(',')[loop.index]}" />
       <c:set var="icon" value="${stemIcons.split(',')[loop.index]}" />
 
-      <div class="stem-card p-6 flex flex-col gap-4" style="border-left: 4px solid ${color};">
+      <div class="stem-card p-6 flex flex-col gap-4" style="border-left: 4px solid ${color};" data-stem="${stem}">
         <div class="flex justify-between items-start">
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined" style="color: ${color};">${icon}</span>
             <h3 class="font-headline-sm text-[20px] text-on-surface uppercase font-bold"><fmt:message key="stem.${stem}" /></h3>
           </div>
           <div class="flex gap-2">
-            <button title="Solo" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">S</button>
-            <button title="Mute" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">M</button>
+            <button type="button" data-action="solo" title="Solo" class="stem-btn w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">S</button>
+            <button type="button" data-action="mute" title="Mute" class="stem-btn w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">M</button>
             <a href="${ctx}/job/${job.id}/download/${stem}" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant hover:bg-surface-dim transition-colors flex items-center justify-center">
               <span class="material-symbols-outlined text-[18px]">download</span>
             </a>
           </div>
         </div>
 
-        <%-- Waveform mock (gerçekte ${stem}.peaks.json'dan render edilir) --%>
         <div class="h-16 flex items-end justify-between w-full gap-[1px]">
           <c:forEach var="h" items="${[20,40,30,60,80,50,70,90,100,60,40,30,50,20,10,30,20,10,40,60,80,50,70,90,100,60,40,30,50,20,10,30]}">
             <div class="waveform-bar" style="height: ${h}%; background-color: ${color};"></div>
           </c:forEach>
         </div>
 
-        <%-- Volume slider --%>
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-outline text-[16px]">volume_up</span>
-          <input type="range" min="0" max="100" value="80" class="w-full h-1 bg-surface-variant rounded-full appearance-none" style="accent-color: ${color};">
+          <input type="range" min="0" max="100" value="80" data-role="volume" class="w-full h-1 bg-surface-variant rounded-full appearance-none" style="accent-color: ${color};">
         </div>
 
-        <%-- HTML5 audio (gerçek dosya bağlı) --%>
-        <audio controls class="w-full mt-2">
+        <audio controls data-role="audio" class="w-full mt-2">
           <source src="${ctx}/job/${job.id}/stream/${stem}" type="audio/wav">
         </audio>
       </div>
@@ -105,6 +102,53 @@
     </a>
   </div>
 </main>
+
+<script>
+(function(){
+  var cards = document.querySelectorAll('.stem-card');
+  var states = {};
+  cards.forEach(function(card){
+    var key = card.dataset.stem;
+    states[key] = { mute: false, solo: false };
+    var audio = card.querySelector('audio[data-role="audio"]');
+    var vol = card.querySelector('input[data-role="volume"]');
+    if (audio && vol) {
+      audio.volume = vol.value / 100;
+      vol.addEventListener('input', function(){ audio.volume = vol.value / 100; });
+    }
+  });
+  function apply(){
+    var soloActive = Object.keys(states).some(function(k){ return states[k].solo; });
+    cards.forEach(function(card){
+      var key = card.dataset.stem;
+      var audio = card.querySelector('audio[data-role="audio"]');
+      if (!audio) return;
+      var shouldMute = states[key].mute || (soloActive && !states[key].solo);
+      audio.muted = shouldMute;
+      card.style.opacity = shouldMute ? '0.55' : '1';
+    });
+  }
+  cards.forEach(function(card){
+    var key = card.dataset.stem;
+    card.querySelectorAll('.stem-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var action = btn.dataset.action;
+        states[key][action] = !states[key][action];
+        if (action === 'solo' && states[key].solo) states[key].mute = false;
+        if (action === 'mute' && states[key].mute) states[key].solo = false;
+        card.querySelectorAll('.stem-btn').forEach(function(b){
+          var on = states[key][b.dataset.action];
+          b.classList.toggle('bg-primary', on);
+          b.classList.toggle('text-on-primary', on);
+          b.classList.toggle('bg-surface-variant', !on);
+          b.classList.toggle('text-on-surface-variant', !on);
+        });
+        apply();
+      });
+    });
+  });
+})();
+</script>
 
 <jsp:include page="/WEB-INF/views/layout/site-footer.jsp" />
 <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
