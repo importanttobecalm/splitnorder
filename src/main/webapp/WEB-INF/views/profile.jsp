@@ -53,8 +53,16 @@
         <section class="bg-surface-container-lowest rounded-xl soft-shadow p-8">
           <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6"><fmt:message key="profile.tab.account" /></h2>
 
-          <c:if test="${not empty saved}">
+          <c:if test="${param.saved == '1'}">
             <div class="mb-6 p-3 rounded-[10px] bg-primary-fixed text-on-primary-fixed font-body-sm"><fmt:message key="profile.saved" /></div>
+          </c:if>
+          <c:if test="${not empty param.error}">
+            <div class="mb-6 p-3 rounded-[10px] bg-error-container text-on-error-container font-body-sm">
+              <c:choose>
+                <c:when test="${param.error == 'username_taken'}"><fmt:message key="auth.error.usernameExists" /></c:when>
+                <c:otherwise><fmt:message key="profile.error.usernameInvalid" /></c:otherwise>
+              </c:choose>
+            </div>
           </c:if>
 
           <form method="post" action="${ctx}/profile/update" class="flex flex-col gap-6">
@@ -108,6 +116,17 @@
           <h2 class="font-headline-sm text-headline-sm text-on-surface mb-6"><fmt:message key="profile.tab.security" /></h2>
           <c:choose>
             <c:when test="${sessionScope.user.authProvider == 'LOCAL'}">
+              <c:if test="${param.saved == '1'}">
+                <div class="mb-6 p-3 rounded-[10px] bg-primary-fixed text-on-primary-fixed font-body-sm"><fmt:message key="profile.password.changed" /></div>
+              </c:if>
+              <c:if test="${not empty param.error}">
+                <div class="mb-6 p-3 rounded-[10px] bg-error-container text-on-error-container font-body-sm">
+                  <c:choose>
+                    <c:when test="${param.error == 'invalid_current'}"><fmt:message key="profile.error.invalidCurrent" /></c:when>
+                    <c:otherwise><fmt:message key="profile.error.passwordShort" /></c:otherwise>
+                  </c:choose>
+                </div>
+              </c:if>
               <form method="post" action="${ctx}/profile/password" class="flex flex-col gap-6 max-w-md">
                 <div class="flex flex-col gap-1">
                   <label class="font-mono-label text-mono-label text-on-surface-variant uppercase"><fmt:message key="profile.password.current" /></label>

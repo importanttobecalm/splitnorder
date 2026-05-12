@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -18,12 +19,15 @@ public class HistoryController {
     private JobService jobService;
 
     @GetMapping("/history")
-    public String showHistory(HttpSession session, Model model) {
+    public String showHistory(@RequestParam(name = "q", required = false) String q,
+                              HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:http://localhost:5173/login";
+            return "redirect:/auth/login";
         }
-        List<Job> jobs = jobService.getJobsByUser(user.getId());
+        List<Job> jobs = (q == null || q.trim().isEmpty())
+                ? jobService.getJobsByUser(user.getId())
+                : jobService.searchJobsByUser(user.getId(), q);
         model.addAttribute("jobs", jobs);
         return "history";
     }

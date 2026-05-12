@@ -104,7 +104,7 @@
     <%-- Tamamlandı butonu --%>
     <c:if test="${job.status == 'COMPLETED'}">
       <div class="flex justify-center">
-        <a href="${ctx}/job/${job.id}/result" class="bg-primary hover:bg-primary-container text-on-primary px-8 py-4 rounded-xl font-body-md font-medium flex items-center gap-2 transition-all shadow-md">
+        <a href="${ctx}/job/${job.id}" class="bg-primary hover:bg-primary-container text-on-primary px-8 py-4 rounded-xl font-body-md font-medium flex items-center gap-2 transition-all shadow-md">
           <span class="material-symbols-outlined">graphic_eq</span>
           <fmt:message key="processing.viewResult" />
         </a>

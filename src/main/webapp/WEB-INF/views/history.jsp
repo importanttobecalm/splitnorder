@@ -60,7 +60,7 @@
     <c:when test="${view == 'grid'}">
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter">
         <c:forEach var="job" items="${jobs}">
-          <a href="${ctx}/job/${job.id}/result" class="bg-surface-container-lowest rounded-xl overflow-hidden soft-shadow hover:shadow-lg transition-all group">
+          <a href="${ctx}/job/${job.id}" class="bg-surface-container-lowest rounded-xl overflow-hidden soft-shadow hover:shadow-lg transition-all group">
             <div class="h-[160px] relative bg-gradient-to-br from-primary-fixed via-tertiary-fixed to-secondary-fixed">
               <div class="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
                 <c:choose>
@@ -122,7 +122,7 @@
             <c:forEach var="job" items="${jobs}">
               <tr class="border-b border-outline-variant/20 hover:bg-surface-container-low transition-colors">
                 <td class="px-6 py-4">
-                  <a href="${ctx}/job/${job.id}/result" class="flex items-center gap-3">
+                  <a href="${ctx}/job/${job.id}" class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-inverse-primary flex items-center justify-center text-on-primary">
                       <span class="material-symbols-outlined text-[20px]">music_note</span>
                     </div>
@@ -144,7 +144,7 @@
                   ${fn:replace(fn:substring(job.createdAt, 0, 16), "T", " ")}
                 </td>
                 <td class="px-6 py-4 text-right">
-                  <a href="${ctx}/job/${job.id}/result" class="text-primary hover:text-primary-container">
+                  <a href="${ctx}/job/${job.id}" class="text-primary hover:text-primary-container">
                     <span class="material-symbols-outlined">arrow_forward</span>
                   </a>
                 </td>

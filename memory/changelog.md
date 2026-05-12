@@ -6,6 +6,9 @@ updated: 2026-05-12
 ---
 
 ## 2026-05-12
+- feat(profile): `ProfileController` (`/profile/update`, `/profile/password`, `/profile/delete`) + `UserService.updateUsername/changePassword/deleteAccount` eklendi. NotebookLM bm470 ile teyit edildi: `@RequestParam` form-based, `@Transactional`, `session.invalidate()` hesap silmede. LOCAL provider değilse şifre değişimi InvalidCredentials. Hesap silmede user'a ait Job'lar (Stems cascade) önce silinir. profile.jsp `?saved=1/&error=...` query param ile mesaj gösterimi; messages_*.properties'e 5 yeni anahtar (`profile.password.changed`, `profile.error.*`, `auth.error.usernameExists`). `HomeController.@GetMapping("/profile")` kaldırıldı (çakışma). 20/20 test yeşil.
+- feat(history): `HistoryController.@RequestParam q` ile dosya adı araması; `JobDao.findByUserIdAndQuery(userId, q)` CriteriaBuilder + `cb.like(cb.lower(originalFilename), "%q%")` (case-insensitive, slayt birebir Locale("tr","TR")). Bonus: `findByUserId` + `findAll` da JPQL'den CriteriaBuilder'a çevrildi — ADR-07 "JPQL kalmadı" iddiası artık gerçek.
+- fix(ui): `history.jsp` ve `processing.jsp`'de `/job/{id}/result` → `/job/{id}` (gerçek mapping; eskisi 404 veriyordu).
 - fix(ux): `processing.jsp` görünür tam-sayfa `location.reload()` (3 sn) kaldırıldı → sessiz AJAX polling. `/job/{id}/status` JSON endpoint'i fetch ile sorgulanıyor; COMPLETED/FAILED olunca tek seferlik yönlendirme. Kullanıcı artık arka plan polling'ini görmüyor.
 - fix(ui): `processing.jsp` "Cancel" butonu kaldırıldı (POST `/job/{id}/cancel` endpoint'i yoktu — 404). Yerine processing durum rozeti.
 - feat(ui): `result.jsp` Solo/Mute butonları JS ile işlevsel (audio.muted toggle, solo aktifken diğerleri mute, görsel state primary renkle). Volume slider audio.volume'a bağlandı.
@@ -54,3 +57,4 @@ updated: 2026-05-12
 - chore: `yusuf2` dalı origin/main 29dd84e üzerinden açıldı. Sebep: temiz başlangıç. -
 - chore: local main origin/main'e rebase edildi (1 docs commit yusufun-dali'de korunuyor). Sebep: divergent durumu temizleme. -
 - fix: result.jsp `/job/{id}/stream/{stem}` endpoint'i çağırıyordu ama JobController'da yoktu → audio player'lar 0:00/0:00 gösteriyordu. `streamStem` endpoint'i eklendi (stem + "original" desteği). JobController.java
+- feat: logo eklendi (`static/img/logo.jpg`). Nav'daki music_note ikonu logo ile değiştirildi, login+register hero logoları artık görünür, head.jsp'ye favicon link eklendi.

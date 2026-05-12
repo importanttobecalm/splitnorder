@@ -56,13 +56,18 @@ public class JobService {
         return job;
     }
 
-    @Async
     public void processJobAsync(Long jobId) {
-        try {
-            colabService.processJob(jobId);
-        } catch (Exception e) {
-            logger.error("Async processing error for job {}: {}", jobId, e.getMessage(), e);
-        }
+        // Manuel fire-and-forget thread: @EnableAsync olmadan Spring @Async hiç çalışmıyor.
+        // Demucs 8 sn → request thread'i 8 sn bekletmemek için ayrı thread.
+        Thread t = new Thread(() -> {
+            try {
+                colabService.processJob(jobId);
+            } catch (Exception e) {
+                logger.error("Async processing error for job {}: {}", jobId, e.getMessage(), e);
+            }
+        }, "demucs-job-" + jobId);
+        t.setDaemon(true);
+        t.start();
     }
 
     @Transactional(readOnly = true)
@@ -73,6 +78,11 @@ public class JobService {
     @Transactional(readOnly = true)
     public List<Job> getJobsByUser(Long userId) {
         return jobDao.findByUserId(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Job> searchJobsByUser(Long userId, String query) {
+        return jobDao.findByUserIdAndQuery(userId, query);
     }
 
     @Transactional
