@@ -42,3 +42,11 @@ Hoca slayt-dışı ekstra özellikler için bonus vermez, hatta "ders kapsamınd
 - Yeni Java değişikliklerinde önce NotebookLM `bm470` sorgula (feedback_notebooklm_first.md).
 - Bu raporu uygulamadan önce kullanıcıya onay sor — aksiyonlar büyük etkili (Google login, CorsFilter kaldırma).
 - Tahmini temizlik: ~240 satır net azalma + 1 dep düşüşü.
+
+## Kullanıcı Kararı (2026-05-12)
+Kullanıcı raporu inceledikten sonra aksiyonların **hiçbirinin** şu an uygulanmamasına karar verdi:
+- **#1 (Google/CORS/HistoryController redirect):** Kod kalsın, kaldırmaya gerek yok.
+- **#2 (Exception konsolidasyonu 8→3-4):** Şu an yapılmayacak.
+- **#3 (MockMvc controller testleri eklenmesi):** Şu an yapılmayacak.
+
+**Sonuç:** Kod tabanı bu rapor itibarıyla **olduğu gibi** bırakıldı. Rapor ileride savunma/sunum öncesi tekrar değerlendirilebilir, ama otomatik aksiyon yok. Bir sonraki Claude bu maddeleri kendi inisiyatifiyle uygulamasın — kullanıcı bilinçli olarak reddetti.
