@@ -221,7 +221,9 @@
   /* Manifesto: GSAP ScrollTrigger pin ile yönetiliyor (renk geçişleriyle senkron).
      Section sadece trigger, pin'leme JS tarafından yapılıyor. */
   .sec.manifesto { min-height: 100vh; }
-  .manifesto-content { max-width: 760px; text-align: center; padding: 0 32px; }
+  /* Default opacity 0 — master timeline FAZ 6.5'te (0.74) görünür yapar.
+     Böylece logo parçalanıp etiketler belirmeden manifesto yazısı ekrana gelmez. */
+  .manifesto-content { max-width: 760px; text-align: center; padding: 0 32px; opacity: 0; }
   .manifesto-content .lead {
     font-family: 'Instrument Serif', serif;
     font-style: italic;

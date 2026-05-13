@@ -137,6 +137,11 @@ Object.keys(PARTS).forEach((key) => {
   masterTl.to(`.${cls}`, { opacity: 1, duration: 0.06 }, 0.62 + i * 0.022);
 });
 
+// ============ FAZ 6.5: MANİFESTO YAZISI BELİRİR (0.74) ============
+// Yazı default CSS'te opacity 0; sadece logo parçalandıktan + etiketler
+// belirdikten sonra fade-in olur. Bundan önce kullanıcı yazıyı görmez.
+masterTl.to('.manifesto-content', { opacity: 1, duration: 0.04, ease: 'power2.out' }, 0.74);
+
 // ============ FAZ 7: MANİFESTO SENKRON MORF — AYRI PIN TIMELINE ============
 // Master timeline'a değil, manifesto section'ına bağlı ayrı bir ScrollTrigger.
 // pin: .manifesto-content viewport'a yapışır; end: '+=300%' = section
