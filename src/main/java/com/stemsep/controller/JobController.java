@@ -32,7 +32,7 @@ public class JobController {
     @Autowired
     private StemService stemService;
 
-    @GetMapping("/{id}")
+    @GetMapping({"/{id}", "/{id}/result"})
     public String showJob(@PathVariable Long id, HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
@@ -77,6 +77,56 @@ public class JobController {
         response.put("filename", job.getOriginalFilename());
 
         return response;
+    }
+
+    @GetMapping("/{id}/stream/{stemType}")
+    public void streamStem(@PathVariable Long id, @PathVariable String stemType,
+                           HttpSession session, HttpServletResponse response) throws IOException {
+        User user = (User) session.getAttribute("user");
+        Job job = jobService.getJob(id);
+
+        if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
+            response.sendError(403);
+            return;
+        }
+
+        File file;
+        String contentType;
+        if ("original".equals(stemType)) {
+            if (job.getOriginalFilePath() == null) {
+                response.sendError(404);
+                return;
+            }
+            file = new File(job.getOriginalFilePath());
+            contentType = "audio/mpeg";
+        } else {
+            Stem stem = stemService.getStemByJobAndType(id, stemType);
+            if (stem == null || stem.getFilePath() == null) {
+                response.sendError(404);
+                return;
+            }
+            file = new File(stem.getFilePath());
+            contentType = "audio/wav";
+        }
+
+        if (!file.exists()) {
+            response.sendError(404);
+            return;
+        }
+
+        response.setContentType(contentType);
+        response.setHeader("Content-Disposition", "inline; filename=\"" + file.getName() + "\"");
+        response.setHeader("Accept-Ranges", "bytes");
+        response.setContentLengthLong(file.length());
+
+        try (FileInputStream fis = new FileInputStream(file);
+             OutputStream os = response.getOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+        }
     }
 
     @GetMapping("/{id}/download/{stemType}")
