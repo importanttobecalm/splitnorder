@@ -3,7 +3,11 @@ package com.stemsep.controller;
 import com.stemsep.exception.EmailExistsException;
 import com.stemsep.exception.EmailNotVerifiedException;
 import com.stemsep.exception.InvalidCredentialsException;
+import com.stemsep.exception.InvalidTokenException;
 import com.stemsep.exception.UsernameExistsException;
+import com.stemsep.exception.VerificationTokenExpiredException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import com.stemsep.model.User;
 import com.stemsep.service.AuthService;
 import org.slf4j.Logger;
@@ -25,7 +29,13 @@ public class AuthController {
     private AuthService authService;
 
     @GetMapping("/login")
-    public String loginPage() {
+    public String loginPage(@RequestParam(value = "error", required = false) String error,
+                            @RequestParam(value = "message", required = false) String message,
+                            @RequestParam(value = "email", required = false) String email,
+                            Model model) {
+        if (error != null) model.addAttribute("error", error);
+        if (message != null) model.addAttribute("message", message);
+        if (email != null) model.addAttribute("email", email);
         return "auth/login";
     }
 
@@ -93,8 +103,17 @@ public class AuthController {
 
     @GetMapping("/verify-email")
     public String verifyEmail(@RequestParam("token") String token) {
-        authService.verifyEmail(token);
-        return "redirect:/auth/login?message=EMAIL_VERIFIED";
+        try {
+            authService.verifyEmail(token);
+            return "redirect:/auth/login?message=EMAIL_VERIFIED";
+        } catch (VerificationTokenExpiredException e) {
+            logger.warn("E-posta doğrulama: token süresi dolmuş, kullanıcıya resend akışı sunulacak (email={})", e.getEmail());
+            String encoded = URLEncoder.encode(e.getEmail(), StandardCharsets.UTF_8);
+            return "redirect:/auth/login?error=TOKEN_EXPIRED&email=" + encoded;
+        } catch (InvalidTokenException e) {
+            logger.warn("E-posta doğrulama: geçersiz token");
+            return "redirect:/auth/login?error=INVALID_TOKEN";
+        }
     }
 
     @PostMapping("/resend-verification")
@@ -102,5 +121,54 @@ public class AuthController {
                                      @RequestParam(value = "lang", defaultValue = "tr") String lang) {
         authService.resendVerificationEmail(email.trim().toLowerCase(), lang);
         return "redirect:/auth/login?message=VERIFICATION_RESENT";
+    }
+
+    @GetMapping("/forgot-password")
+    public String forgotPasswordPage() {
+        return "auth/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotPassword(@RequestParam("email") String email,
+                                 @RequestParam(value = "lang", defaultValue = "tr") String lang) {
+        authService.requestPasswordReset(email.trim().toLowerCase(), lang);
+        return "redirect:/auth/login?message=RESET_LINK_SENT";
+    }
+
+    @GetMapping("/reset-password")
+    public String resetPasswordPage(@RequestParam("token") String token, Model model) {
+        model.addAttribute("token", token);
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(@RequestParam("token") String token,
+                                @RequestParam("password") String password,
+                                @RequestParam("password_confirm") String passwordConfirm,
+                                Model model) {
+        if (password == null || password.length() < 8) {
+            model.addAttribute("error", "PASSWORD_TOO_SHORT");
+            model.addAttribute("token", token);
+            return "auth/reset-password";
+        }
+        if (!password.equals(passwordConfirm)) {
+            model.addAttribute("error", "PASSWORD_MISMATCH");
+            model.addAttribute("token", token);
+            return "auth/reset-password";
+        }
+        try {
+            authService.resetPassword(token, password);
+            return "redirect:/auth/login?message=PASSWORD_RESET_SUCCESS";
+        } catch (InvalidTokenException e) {
+            logger.warn("Parola sıfırlama başarısız (geçersiz/süresi dolmuş token)");
+            model.addAttribute("error", "INVALID_OR_EXPIRED_TOKEN");
+            model.addAttribute("token", token);
+            return "auth/reset-password";
+        } catch (RuntimeException e) {
+            logger.error("Parola sıfırlama sırasında beklenmedik hata", e);
+            model.addAttribute("error", "INTERNAL_ERROR");
+            model.addAttribute("token", token);
+            return "auth/reset-password";
+        }
     }
 }

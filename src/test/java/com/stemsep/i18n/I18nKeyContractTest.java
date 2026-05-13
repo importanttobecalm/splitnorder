@@ -38,6 +38,8 @@ public class I18nKeyContractTest {
     private static final List<String> AUTH_ERROR_CODES = List.of(
             "INVALID_CREDENTIALS",
             "EMAIL_NOT_VERIFIED",
+            "TOKEN_EXPIRED",
+            "INVALID_TOKEN",
             "USERNAME_EXISTS",
             "EMAIL_EXISTS",
             "INTERNAL_ERROR"

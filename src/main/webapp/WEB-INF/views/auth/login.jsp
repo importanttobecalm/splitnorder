@@ -46,6 +46,18 @@
         <div class="mb-4 p-3 rounded-[10px] bg-error-container text-on-error-container font-body-sm text-body-sm">
           <fmt:message key="auth.error.${error}" />
         </div>
+        <%-- Doğrulama maili tekrar gönderme akışı: süresi dolmuş veya henüz doğrulanmamış --%>
+        <c:if test="${error == 'EMAIL_NOT_VERIFIED' or error == 'TOKEN_EXPIRED'}">
+          <c:set var="resendEmail" value="${not empty email ? email : param.email}" />
+          <c:if test="${not empty resendEmail}">
+            <form method="post" action="${ctx}/auth/resend-verification" class="mb-4 -mt-2">
+              <input type="hidden" name="email" value="${resendEmail}" />
+              <button type="submit" class="font-body-sm text-body-sm font-medium text-primary hover:text-primary-container underline transition-colors">
+                <fmt:message key="auth.resend_verification" />
+              </button>
+            </form>
+          </c:if>
+        </c:if>
       </c:if>
 
       <%-- Başarı mesajı (örn. doğrulama maili gönderildi) --%>

@@ -24,6 +24,7 @@ public class AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private static final int VERIFICATION_TOKEN_HOURS = 24;
+    private static final int RESET_TOKEN_HOURS = 1;
 
     @Autowired
     private UserDao userDao;
@@ -114,14 +115,51 @@ public class AuthService {
     @Transactional
     public void verifyEmail(String token) {
         User user = userDao.findByVerificationToken(token);
-        if (user == null || user.getVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (user == null) {
             throw new InvalidTokenException(token);
+        }
+        if (user.getVerificationTokenExpiry() == null
+                || user.getVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new com.stemsep.exception.VerificationTokenExpiredException(user.getEmail());
         }
         user.setEmailVerified(true);
         user.setVerificationToken(null);
         user.setVerificationTokenExpiry(null);
         userDao.update(user);
         logger.info("E-posta doğrulandı: userId={}", user.getId());
+    }
+
+    @Transactional
+    public void requestPasswordReset(String email, String lang) {
+        User user = userDao.findByEmail(email);
+        if (user == null || !"LOCAL".equals(user.getAuthProvider())) {
+            logger.info("Parola sıfırlama: kullanıcı bulunamadı veya LOCAL değil, sessiz geçildi (email={})", email);
+            return;
+        }
+        String token = UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setResetTokenExpiry(LocalDateTime.now().plusHours(RESET_TOKEN_HOURS));
+        userDao.update(user);
+        try {
+            emailService.sendPasswordResetEmail(email, user.getUsername(), token, lang);
+            logger.info("Parola sıfırlama maili gönderildi: userId={}", user.getId());
+        } catch (Exception e) {
+            logger.error("Parola sıfırlama maili gönderilemedi: email={}", email, e);
+        }
+    }
+
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        User user = userDao.findByResetToken(token);
+        if (user == null || user.getResetTokenExpiry() == null
+                || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new InvalidTokenException(token);
+        }
+        user.setPasswordHash(PasswordHasher.sha256(newPassword));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userDao.update(user);
+        logger.info("Parola sıfırlandı: userId={}", user.getId());
     }
 
     @Transactional
