@@ -59,3 +59,22 @@ src/main/resources/hibernate.properties
 # Proje durum/karar/log dosyaları repo'ya dahil ki klonlayan ekip ortak hafıza kullanabilsin.
 memory/user_*.md
 
+# Secrets — OAuth client secrets vb.
+client_secret_*.json
+
+# Backup files
+*.bak
+*.bak2
+
+# Playwright MCP runtime artifacts
+.playwright-mcp/
+
+# Stitch design system scratch / mockup workspace (kök seviyesi)
+/splitnorder/
+/stitch_splitnorder_design_system/
+/splitnorder_landing*.html
+/A_modern*.jpeg
+/logo.jpeg
+/showcase-hero.png
+/sablon.docx
+
