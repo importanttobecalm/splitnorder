@@ -236,6 +236,8 @@
   }
   .hero-content h1 em { font-style: italic; color: var(--ink-dim); }
 
+  /* Manifesto bölümü 2 ekran yüksekliği — renkli kelime geçişlerine yeterli scroll mesafesi ver */
+  .sec.manifesto { min-height: 220vh; }
   .manifesto-content { max-width: 760px; text-align: center; padding: 0 32px; }
   .manifesto-content .lead {
     font-family: 'Instrument Serif', serif;
@@ -667,22 +669,24 @@ Object.keys(PARTS).forEach((key) => {
   masterTl.to(`.${cls}`, { opacity: 1, duration: 0.06 }, 0.62 + i * 0.022);
 });
 
-// ============ FAZ 7: MANİFESTO SENKRON MORF (0.72 - 0.88) ============
+// ============ FAZ 7: MANİFESTO SENKRON MORF (0.74 - 1.00) ============
 // Manifesto okunurken her kelime silik renkten kendi rengine canlanır,
 // aynı anda ilgili parça yazıya dönüşür.
 // Sırayla: Vokal (kırmızı), davul (turuncu), bas (mor), diğer (turkuaz)
+// Aralıklar geniş tutuldu (~0.07 birim = sayfa scroll'unun %7'si) → kullanıcı
+// her kelimenin renk değişimini rahatça takip edebilsin.
 const morphSequence = [
-  { word: '.manifesto-content .accent',    part: 'vokal', color: '#e2494a', at: 0.72 },
-  { word: '.manifesto-content .accent-2',  part: 'davul', color: '#efa060', at: 0.76 },
-  { word: '.manifesto-content .accent-3',  part: 'bas',   color: '#8b6cb8', at: 0.80 },
-  { word: '.manifesto-content .accent-4',  part: 'diger', color: '#36b9ad', at: 0.84 },
+  { word: '.manifesto-content .accent',    part: 'vokal', color: '#e2494a', at: 0.74 },
+  { word: '.manifesto-content .accent-2',  part: 'davul', color: '#efa060', at: 0.81 },
+  { word: '.manifesto-content .accent-3',  part: 'bas',   color: '#8b6cb8', at: 0.88 },
+  { word: '.manifesto-content .accent-4',  part: 'diger', color: '#36b9ad', at: 0.95 },
 ];
 
 morphSequence.forEach(({ word, part, color, at }) => {
-  // kelime silikten kendi rengine canlanır (vurgu efekti)
+  // kelime silikten kendi rengine canlanır (vurgu efekti) — daha uzun süreyle
   masterTl.to(word, {
     color: color,
-    duration: 0.04,
+    duration: 0.06,
     ease: 'power2.out'
   }, at);
   // ilgili parça yazıya dönüşür (küçülüp kaybolur)
@@ -691,17 +695,17 @@ morphSequence.forEach(({ word, part, color, at }) => {
     y: () => getTargetY(part, 0.04),
     scale: 0.04,
     opacity: 0,
-    duration: 0.04,
+    duration: 0.06,
     ease: 'power2.in'
   }, at);
 });
 
-// Son cümle "— her biri kendi hikayesini söyler." morf tamamlandıktan sonra kendi rengine geçer
+// Son cümle son morf'tan hemen sonra kendi rengine geçer (son kelimeyle paralel)
 masterTl.to('.manifesto-content .closing', {
   color: '#f5f2ea',
   duration: 0.05,
   ease: 'power2.out'
-}, 0.88);
+}, 0.95);
 
 // MOUSE PARALLAX
 const layers = {
