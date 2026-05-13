@@ -697,6 +697,10 @@ const manifestoTl = gsap.timeline({
   }
 });
 
+// Pin başlar başlamaz logo parçaları kaybolur (yazıyla çakışmasın).
+// Geri scroll'da master timeline reverse edip geri açar.
+manifestoTl.to('.layer', { opacity: 0, duration: 0.2, ease: 'power2.out' }, 0);
+
 morphParts.forEach(({ word, part, color }, i) => {
   manifestoTl.to(word, { color: color, ease: 'power2.out' }, i);
   manifestoTl.to(`.layer.${part}`, {
