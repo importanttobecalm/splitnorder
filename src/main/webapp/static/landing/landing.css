@@ -1,0 +1,414 @@
+  :root {
+    --bg: #0a0a10;
+    --bg-2: #14141f;
+    --ink: #f5f2ea;
+    --ink-dim: rgba(245, 242, 234, 0.55);
+    --ink-faint: rgba(245, 242, 234, 0.15);
+    --vocal: #e2494a;
+    --drum:  #efa060;
+    --bass:  #8b6cb8;
+    --other: #36b9ad;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Geist', -apple-system, sans-serif;
+    font-weight: 300;
+    /* overflow-x: hidden body'yi scroll container yapıp position:sticky'yi
+       bozuyordu (overflow-y implicit auto olur). overflow-x: clip viewport
+       scroll'unu etkilemez → sticky manifesto-content beklendiği gibi yapışır. */
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  }
+
+  .aurora {
+    position: fixed;
+    inset: -10%;
+    z-index: 0;
+    pointer-events: none;
+    will-change: transform;
+  }
+  .aurora-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(140px);
+  }
+  .blob-1 { width: 50vw; height: 50vw; background: var(--vocal); top: -10%; left: -15%; opacity: 0.22; }
+  .blob-2 { width: 45vw; height: 45vw; background: var(--other); bottom: -15%; right: -10%; opacity: 0.22; }
+  .blob-3 { width: 35vw; height: 35vw; background: var(--bass); top: 40%; left: 30%; opacity: 0.15; }
+  .blob-4 { width: 30vw; height: 30vw; background: var(--drum); top: 20%; right: 25%; opacity: 0.18; }
+
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 200;
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+  }
+  .nav .brand-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: opacity 0.2s ease;
+  }
+  .nav .brand-link:hover { opacity: 0.8; }
+  .nav .brand-logo {
+    height: 54px;
+    width: auto;
+    display: block;
+  }
+  .nav .brand-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  /* ORBIT — parçalar arka planda yarı saydam */
+  .orbit {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(-32px, -1.5vw, -8px);   /* negatif gap → yazılar logoya iyice yaklaşıyor */
+    opacity: 1;
+  }
+
+  /* INTRO YAZILARI — Instrument Serif italic */
+  .intro-word {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(58px, 7vw, 116px);   /* büyük + logoya yakın hissi */
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    white-space: nowrap;
+    will-change: transform, opacity;
+    flex-shrink: 0;
+  }
+  .intro-split { text-align: right; }
+  .intro-order { text-align: left; }
+
+  .logo-stack {
+    position: relative;
+    width: min(68vmin, 620px);
+    height: min(68vmin, 620px);
+  }
+
+  /* her layer 100% logo-stack — parça orijinal PNG'de orijinal yerinde duruyor */
+  .layer {
+    position: absolute;
+    inset: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    will-change: transform, opacity;
+    transform-origin: center;
+    filter: drop-shadow(0 10px 40px rgba(0,0,0,0.35));
+  }
+  .layer.vokal { background-image: url('img/vokal.png'); }
+  .layer.davul { background-image: url('img/davul.png'); }
+  .layer.bas   { background-image: url('img/bas.png');   }
+  .layer.diger { background-image: url('img/diger.png'); }
+
+  /* ETİKETLER */
+  .label {
+    position: fixed;
+    z-index: 4;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
+  }
+  .label .num { display: block; font-size: 9px; opacity: 0.5; margin-bottom: 6px; }
+  .label .name { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .label .tr {
+    display: block;
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    text-transform: none;
+  }
+  .label.l-vocal { top: 14vh;    left: 8vw;   color: var(--vocal); transform-origin: top left; }
+  .label.l-drum  { top: 14vh;    right: 8vw;  color: var(--drum); text-align: right; transform-origin: top right; }
+  .label.l-bass  { bottom: 14vh; left: 8vw;   color: var(--bass); transform-origin: bottom left; }
+  .label.l-other { bottom: 14vh; right: 8vw;  color: var(--other); text-align: right; transform-origin: bottom right; }
+
+  /* İÇERİK — logonun ÖNÜNDE */
+  main {
+    position: relative;
+    z-index: 5;
+  }
+  .sec {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 48px;
+    position: relative;
+  }
+
+  /* Görünmez scroll uzatıcılar — fixed sahne öğelerinin "yaşam süresi" buradan gelir */
+  .spacer {
+    pointer-events: none;
+  }
+  .spacer.intro    { height: 100vh; }   /* intro hold + intro out scroll'u */
+  .spacer.hero-in  { height: 100vh; }   /* hero text belirme scroll'u */
+  .spacer.hero-hold{ height: 100vh; }   /* hero text yavaşça yukarı kayar */
+  .spacer.open     { height: 100vh; }   /* parça açılma scroll'u */
+
+  /* HERO STAGE — fixed overlay, "Tek nota / Dört katman" hep ekran merkezinde sabit */
+  .hero-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;  /* başta gizli, hero in fazında belirir */
+    will-change: opacity, transform;
+  }
+  .hero-stage .hero-content {
+    text-align: center;
+    max-width: 900px;
+    padding: 0 32px;
+    pointer-events: auto;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 28px;
+  }
+  .hero-content h1 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(54px, 10vw, 150px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+  }
+  .hero-content h1 em { font-style: italic; color: var(--ink-dim); }
+
+  /* Manifesto: GSAP ScrollTrigger pin ile yönetiliyor (renk geçişleriyle senkron).
+     Section sadece trigger, pin'leme JS tarafından yapılıyor. */
+  .sec.manifesto { min-height: 100vh; }
+  .manifesto-content { max-width: 760px; text-align: center; padding: 0 32px; }
+  .manifesto-content .lead {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: clamp(30px, 4.5vw, 52px);
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+  .manifesto-content .lead .accent,
+  .manifesto-content .lead .accent-2,
+  .manifesto-content .lead .accent-3,
+  .manifesto-content .lead .accent-4,
+  .manifesto-content .lead .closing {
+    color: rgba(245, 242, 234, 0.15);   /* başlangıçta silik — yer kaplar ama dikkat çekmez */
+    will-change: color;
+  }
+  .manifesto-content .by {
+    margin-top: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .stems-content { max-width: 1100px; width: 100%; }
+  .stems-content > .head { text-align: center; margin-bottom: 64px; }
+  .stems-content > .head h2 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(40px, 6vw, 80px);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin-bottom: 16px;
+  }
+  .stems-content > .head h2 em { font-style: italic; }
+  .stems-content > .head .sub {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink-dim);
+  }
+  .stem-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--ink-faint);
+    border: 1px solid var(--ink-faint);
+  }
+  .stem-card {
+    background: rgba(10, 10, 16, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 32px 24px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: background 0.4s ease;
+  }
+  .stem-card:hover { background: rgba(20, 20, 31, 0.92); }
+  .stem-card .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .stem-card .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; }
+  .stem-card.vocal .dot { background: var(--vocal); }
+  .stem-card.drum  .dot { background: var(--drum); }
+  .stem-card.bass  .dot { background: var(--bass); }
+  .stem-card.other .dot { background: var(--other); }
+  .stem-card h3 {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    margin-top: 24px;
+  }
+  .stem-card.vocal h3 { color: var(--vocal); }
+  .stem-card.drum  h3 { color: var(--drum); }
+  .stem-card.bass  h3 { color: var(--bass); }
+  .stem-card.other h3 { color: var(--other); }
+  .stem-card p { font-size: 13px; line-height: 1.5; color: var(--ink-dim); margin-top: 8px; }
+
+  .cta-content { text-align: center; max-width: 800px; }
+  .cta-content .eyebrow { margin-bottom: 24px; }
+  .cta-content h2 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(48px, 8vw, 120px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 28px;
+  }
+  .cta-content h2 em {
+    font-style: italic;
+    background: linear-gradient(90deg, var(--vocal), var(--drum), var(--bass), var(--other));
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 8s linear infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .cta-content .sub {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: clamp(18px, 2vw, 24px);
+    color: var(--ink-dim);
+    margin-bottom: 56px;
+  }
+  .actions { display: inline-flex; gap: 16px; }
+  .btn {
+    padding: 18px 38px;
+    border-radius: 100px;
+    font-family: 'Geist', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-primary { background: var(--ink); color: var(--bg); }
+  .btn-primary:hover { transform: translateY(-2px); background: var(--other); color: var(--ink); }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--ink-faint); }
+  .btn-ghost:hover { border-color: var(--ink); }
+
+  footer {
+    padding: 60px 48px 40px;
+    border-top: 1px solid var(--ink-faint);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    position: relative;
+    z-index: 5;
+  }
+
+  .progress {
+    position: fixed;
+    top: 50%;
+    right: 28px;
+    transform: translateY(-50%);
+    z-index: 200;
+    height: 200px;
+    width: 1px;
+    background: var(--ink-faint);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .progress::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: var(--p, 0%);
+    background: linear-gradient(to bottom, var(--vocal), var(--drum), var(--bass), var(--other));
+    transition: height 0.05s linear;
+  }
+
+  @media (max-width: 880px) {
+    .nav { padding: 18px 24px; }
+    .nav .brand-logo { height: 45px; }
+    .nav .brand-text { font-size: 16px; }
+    .sec { padding: 80px 24px; }
+    .intro-word { font-size: clamp(56px, 14vw, 128px); }
+    .orbit { gap: -8px; }
+    .stem-grid { grid-template-columns: 1fr 1fr; }
+    .label { font-size: 10px; }
+    .label .tr { font-size: 16px; }
+    .label.l-vocal, .label.l-bass { left: 4vw; }
+    .label.l-drum, .label.l-other { right: 4vw; }
+    .actions { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+    .progress { right: 12px; height: 120px; }
+  }

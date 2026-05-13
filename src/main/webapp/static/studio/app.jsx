@@ -314,32 +314,46 @@ function Connector({ id, d, color, active, speed = 1 }) {
 }
 
 // ─── main app ────────────────────────────────────────────────────────────────
-function AppScreen({ tweaks = {} }) {
-  const [playing, setPlaying] = useState(true);
-  const [time, setTime] = useState(88);
-  const [duration] = useState(225);
-  const [master, setMaster] = useState(0.72);
-  const [stems, setStems] = useState([
+// `audio` prop verilirse AppScreen "controlled" modda çalışır: state ve
+// callback'ler dışarıdan (gerçek <audio> motoru) gelir. Verilmezse iç
+// useState ile mock olarak çalışır (boş demo / processing aşaması). Tasarım
+// her iki modda da birebir aynıdır — sadece bağlantı yeri değişir.
+function AppScreen({ tweaks = {}, audio }) {
+  const [intPlaying, setIntPlaying] = useState(true);
+  const [intTime, setIntTime] = useState(88);
+  const [intDuration, setIntDuration] = useState(225);
+  const [intMaster, setIntMaster] = useState(0.72);
+  const [intStems, setIntStems] = useState([
   { id: "other", name: "Other", color: "#2DB3A0", icon: I.note(), seed: 11, vol: 0.55, solo: false, muted: false, playing: false, pos: "tl" },
   { id: "vocals", name: "Vocals", color: "#E5444C", icon: I.mic(), seed: 27, vol: 0.62, solo: false, muted: false, playing: false, pos: "tr" },
   { id: "bass", name: "Bass", color: "#5B3A8F", icon: I.bass(), seed: 53, vol: 0.42, solo: false, muted: false, playing: false, pos: "bl" },
   { id: "drums", name: "Drums", color: "#F0A45F", icon: I.drum(), seed: 71, vol: 0.60, solo: false, muted: false, playing: false, pos: "br" }]
   );
 
+  // Controlled vs. internal: tek tipte türev. Source of truth audio varsa o.
+  const playing  = audio ? audio.playing  : intPlaying;
+  const time     = audio ? audio.time     : intTime;
+  const duration = audio ? audio.duration : intDuration;
+  const master   = audio ? audio.master   : intMaster;
+  const stems    = audio ? audio.stems    : intStems;
+  const setMaster = audio ? audio.onMasterVolume : setIntMaster;
+
   // any stem in its own "play only this" mode?
   const anyStemSolo = stems.some((s) => s.playing);
   const ticking = playing || anyStemSolo;
 
-  // progress tick
+  // progress tick — sadece mock modunda. Audio modunda gerçek currentTime
+  // <audio> elementinden geldiği için fake tick'e gerek yok.
   useEffect(() => {
+    if (audio) return;
     if (!ticking) return;
     const id = setInterval(() => {
-      setTime((t) => t + 0.1 >= duration ? 0 : t + 0.1);
+      setIntTime((t) => t + 0.1 >= duration ? 0 : t + 0.1);
     }, 100);
     return () => clearInterval(id);
-  }, [ticking, duration]);
+  }, [ticking, duration, audio]);
 
-  const progress = time / duration;
+  const progress = duration > 0 ? time / duration : 0;
   const fmt = (s) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
     const r = Math.floor(s % 60).toString().padStart(2, "0");
@@ -347,28 +361,31 @@ function AppScreen({ tweaks = {} }) {
   };
 
   const onToggle = (id, key) => {
-    setStems((arr) => arr.map((s) => s.id === id ? { ...s, [key]: !s[key] } : s));
+    if (audio) { audio.onStemToggle(id, key); return; }
+    setIntStems((arr) => arr.map((s) => s.id === id ? { ...s, [key]: !s[key] } : s));
   };
   const onVolume = (id, v) => {
-    setStems((arr) => arr.map((s) => s.id === id ? { ...s, vol: v } : s));
+    if (audio) { audio.onStemVolume(id, v); return; }
+    setIntStems((arr) => arr.map((s) => s.id === id ? { ...s, vol: v } : s));
   };
-  // Sync seek: clicking ANY waveform jumps the shared timeline — every other
-  // waveform updates in lockstep because they all read the same `progress`.
+  // Sync seek: clicking ANY waveform jumps the shared timeline.
   const onSeek = (u) => {
-    setTime(Math.max(0, Math.min(duration, u * duration)));
+    if (audio) { audio.onSeek(u); return; }
+    setIntTime(Math.max(0, Math.min(duration, u * duration)));
   };
-  // per-stem play: toggle this stem's solo-play. Master stops automatically
-  // so you hear ONLY this stem.
+  // per-stem play: toggle this stem's solo-play.
   const onStemPlay = (id) => {
-    setStems((arr) =>
+    if (audio) { audio.onStemPlay(id); return; }
+    setIntStems((arr) =>
     arr.map((s) => s.id === id ? { ...s, playing: !s.playing } : { ...s, playing: false })
     );
-    setPlaying(false);
+    setIntPlaying(false);
   };
   // master play: clear any per-stem solo and resume the full mix
   const onMasterPlay = () => {
-    setStems((arr) => arr.map((s) => ({ ...s, playing: false })));
-    setPlaying((p) => !p);
+    if (audio) { audio.onMasterPlay(); return; }
+    setIntStems((arr) => arr.map((s) => ({ ...s, playing: false })));
+    setIntPlaying((p) => !p);
   };
 
   // positions for stem cards
@@ -587,4 +604,18 @@ function MasterWave({ stems, progress, masterPlaying, onSeek }) {
 
 }
 
+// AudioEngine'in tasarımı birebir kullanabilmesi için icon ve seed defaultlarını
+// dışa aç. Bu export tasarımı değiştirmez, sadece kayıp veriyi paylaşır.
 window.AppScreen = AppScreen;
+window.SPLITNORDER_STEM_ICONS = {
+  other:  I.note,
+  vocals: I.mic,
+  bass:   I.bass,
+  drums:  I.drum
+};
+window.SPLITNORDER_STEM_DEFAULTS = [
+  { id: "other",  name: "Other",  color: "#2DB3A0", seed: 11, pos: "tl" },
+  { id: "vocals", name: "Vocals", color: "#E5444C", seed: 27, pos: "tr" },
+  { id: "bass",   name: "Bass",   color: "#5B3A8F", seed: 53, pos: "bl" },
+  { id: "drums",  name: "Drums",  color: "#F0A45F", seed: 71, pos: "br" }
+];
