@@ -36,7 +36,7 @@ public class JobController {
     public String showJob(@PathVariable Long id, HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
-            return "redirect:http://localhost:5173/login";
+            return "redirect:/auth/login";
         }
         
         Job job = jobService.getJob(id);
@@ -44,20 +44,9 @@ public class JobController {
             return "redirect:/history";
         }
 
-        model.addAttribute("job", job);
-
-        switch (job.getStatus()) {
-            case PENDING:
-            case PROCESSING:
-                return "processing";
-            case COMPLETED:
-                return "result";
-            case FAILED:
-                model.addAttribute("error", job.getErrorMessage());
-                return "result";
-            default:
-                return "redirect:/";
-        }
+        // Tüm durumları studio'ya yönlendir — HomeController jobStatus'a göre
+        // doğru overlay'i (processing / audio engine / error) gösterir.
+        return "redirect:/?jobId=" + job.getId();
     }
 
     @GetMapping("/{id}/status")
@@ -81,6 +70,7 @@ public class JobController {
 
     @GetMapping("/{id}/stream/{stemType}")
     public void streamStem(@PathVariable Long id, @PathVariable String stemType,
+                           @RequestParam(value = "fmt", required = false) String fmt,
                            HttpSession session, HttpServletResponse response) throws IOException {
         User user = (User) session.getAttribute("user");
         Job job = jobService.getJob(id);
@@ -105,8 +95,36 @@ public class JobController {
                 response.sendError(404);
                 return;
             }
-            file = new File(stem.getFilePath());
-            contentType = "audio/wav";
+            // fmt query'si verilirse uzantıyı değiştirip alternatif dosyaya bak.
+            // Stem.filePath default MP3 — fmt=wav ile WAV master servis edilir.
+            String basePath = stem.getFilePath();
+            if ("wav".equalsIgnoreCase(fmt)) {
+                String alt = basePath.replaceAll("\\.(mp3|wav|flac)$", ".wav");
+                File altFile = new File(alt);
+                if (altFile.exists()) {
+                    file = altFile;
+                } else {
+                    file = new File(basePath); // WAV yoksa default'a düş
+                }
+            } else if ("mp3".equalsIgnoreCase(fmt)) {
+                String alt = basePath.replaceAll("\\.(mp3|wav|flac)$", ".mp3");
+                File altFile = new File(alt);
+                if (altFile.exists()) {
+                    file = altFile;
+                } else {
+                    file = new File(basePath);
+                }
+            } else {
+                file = new File(basePath);
+            }
+            String lower = file.getName().toLowerCase();
+            if (lower.endsWith(".mp3")) {
+                contentType = "audio/mpeg";
+            } else if (lower.endsWith(".flac")) {
+                contentType = "audio/flac";
+            } else {
+                contentType = "audio/wav";
+            }
         }
 
         if (!file.exists()) {
@@ -152,8 +170,14 @@ public class JobController {
             return;
         }
 
-        response.setContentType("audio/wav");
-        response.setHeader("Content-Disposition", "inline; filename=\"" + stemType + ".wav\"");
+        // Uzantıya göre contentType + filename (eski .wav'lar da çalışsın)
+        String lower = file.getName().toLowerCase();
+        String ext = lower.endsWith(".mp3") ? ".mp3"
+                   : lower.endsWith(".flac") ? ".flac" : ".wav";
+        String ct  = ext.equals(".mp3")  ? "audio/mpeg"
+                   : ext.equals(".flac") ? "audio/flac" : "audio/wav";
+        response.setContentType(ct);
+        response.setHeader("Content-Disposition", "inline; filename=\"" + stemType + ext + "\"");
         response.setContentLength((int) file.length());
 
         try (FileInputStream fis = new FileInputStream(file);
@@ -167,24 +191,39 @@ public class JobController {
     }
 
     @GetMapping("/{id}/download-all")
-    public void downloadAll(@PathVariable Long id, HttpSession session, HttpServletResponse response) throws IOException {
+    public void downloadAll(@PathVariable Long id,
+                            @RequestParam(value = "format", required = false) String format,
+                            HttpSession session, HttpServletResponse response) throws IOException {
         User user = (User) session.getAttribute("user");
         Job job = jobService.getJob(id);
-        
+
         if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
             response.sendError(403);
             return;
         }
 
+        // Default mp3 — küçük ZIP, hızlı. format=wav ile kayıpsız master.
+        final String fmt = "wav".equalsIgnoreCase(format) ? "wav" : "mp3";
+
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition",
-                "attachment; filename=\"stems_" + job.getOriginalFilename() + ".zip\"");
+                "attachment; filename=\"stems_" + fmt + "_" + job.getOriginalFilename() + ".zip\"");
 
         try (ZipOutputStream zos = new ZipOutputStream(response.getOutputStream())) {
             for (Stem stem : job.getStems()) {
-                File file = new File(stem.getFilePath());
+                // Stem.filePath default uzantısından format'a göre dosya seç
+                String basePath = stem.getFilePath();
+                String resolved = basePath.replaceAll("\\.(mp3|wav|flac)$", "." + fmt);
+                File file = new File(resolved);
+                // Format yoksa fallback orijinal filePath'e (eski .wav-only jobs)
+                if (!file.exists()) {
+                    file = new File(basePath);
+                }
                 if (file.exists()) {
-                    zos.putNextEntry(new ZipEntry(stem.getStemType() + ".wav"));
+                    String name = file.getName().toLowerCase();
+                    String zext = name.endsWith(".mp3") ? ".mp3"
+                                : name.endsWith(".flac") ? ".flac" : ".wav";
+                    zos.putNextEntry(new ZipEntry(stem.getStemType() + zext));
                     try (FileInputStream fis = new FileInputStream(file)) {
                         byte[] buffer = new byte[8192];
                         int bytesRead;

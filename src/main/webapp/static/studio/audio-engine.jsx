@@ -19,6 +19,83 @@ function AudioEngine(props) {
   const [duration, setDuration] = React.useState(225);
   const [master, setMaster] = React.useState(0.8);
 
+  // Blob URL cache — ZIP tek seferde inip JSZip ile RAM'de açıldığında
+  // 4 stem için "blob:" URL üretilir. <audio> bu URL'leri kaynak olarak alır
+  // ve play/seek anında çalar (network round-trip YOK).
+  const [blobUrls, setBlobUrls] = React.useState(null);  // {vocals: "blob://...", ...} veya null
+  const [loadingPct, setLoadingPct] = React.useState(0); // 0-100, ZIP indirme yüzdesi
+  const [loadError, setLoadError] = React.useState(null);
+
+  // Mount: ZIP'i indir, JSZip ile aç, 4 blob URL üret
+  React.useEffect(() => {
+    if (!jobId || typeof JSZip === "undefined") return;
+    let cancelled = false;
+    const urlsCreated = [];
+
+    (async () => {
+      try {
+        setLoadingPct(1);
+        const res = await fetch(ctx + "/job/" + jobId + "/download-all?format=mp3", {
+          credentials: "same-origin",
+        });
+        if (!res.ok) throw new Error("ZIP HTTP " + res.status);
+
+        // Progress tracking — Content-Length varsa ilerleme göster
+        const total = +res.headers.get("Content-Length") || 0;
+        const reader = res.body.getReader();
+        const chunks = [];
+        let received = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (total) setLoadingPct(Math.min(99, Math.round((received / total) * 95)));
+        }
+        if (cancelled) return;
+
+        // Blob → JSZip
+        const zipBlob = new Blob(chunks);
+        setLoadingPct(96);
+        const zip = await JSZip.loadAsync(zipBlob);
+        if (cancelled) return;
+
+        // Her stem için blob URL üret
+        const map = {};
+        const stemNames = ["vocals", "drums", "bass", "other"];
+        for (const name of stemNames) {
+          // ZIP içindeki dosya adı: "{stem}.mp3" (download-all'da format=mp3 verdik)
+          const entry = zip.file(name + ".mp3") || zip.file(name + ".wav");
+          if (!entry) continue;
+          const blob = await entry.async("blob");
+          if (cancelled) return;
+          const type = entry.name.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+          const typedBlob = new Blob([blob], { type });
+          const url = URL.createObjectURL(typedBlob);
+          urlsCreated.push(url);
+          map[name] = url;
+        }
+        if (cancelled) {
+          urlsCreated.forEach(URL.revokeObjectURL);
+          return;
+        }
+        setBlobUrls(map);
+        setLoadingPct(100);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("AudioEngine ZIP fetch hatası:", err);
+          setLoadError(err.message);
+          setLoadingPct(0);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      urlsCreated.forEach(URL.revokeObjectURL);
+    };
+  }, [ctx, jobId]);
+
   // Stem state — AppScreen'in beklediği TAM shape (icon ve seed dahil),
   // app.jsx export'undan (window.SPLITNORDER_STEM_DEFAULTS). Bu sayede
   // StemCard waveform'u doğru seed ile çizilir, icon doğru render edilir.
@@ -139,6 +216,12 @@ function AudioEngine(props) {
     onMasterVolume: setMaster
   };
 
+  // Audio src: blob URL hazırsa onu kullan (RAM, 0ms latency); değilse
+  // ağ stream'i fallback (yine de çalışır, yavaş ama bekletmez)
+  const srcFor = (id) => (blobUrls && blobUrls[id])
+    ? blobUrls[id]
+    : (ctx + "/job/" + jobId + "/stream/" + id);
+
   return (
     <React.Fragment>
       {/* Hidden audio elementleri — DOM'da ama görünmüyor */}
@@ -147,10 +230,30 @@ function AudioEngine(props) {
           <audio
             key={s.id}
             ref={setRef(s.id)}
-            src={ctx + "/job/" + jobId + "/stream/" + s.id}
-            preload="metadata" />
+            src={srcFor(s.id)}
+            preload={blobUrls ? "auto" : "metadata"} />
         ))}
       </div>
+
+      {/* Studio'nun sağ üst köşesinde mini loading indicator —
+          tasarımı bozmadan, sayfanın akışını engellemeden. */}
+      {!blobUrls && !loadError && loadingPct > 0 && (
+        <div className="audeng-loading" role="status" aria-live="polite">
+          <div className="audeng-loading-spinner" />
+          <div>
+            <div className="audeng-loading-title">Stem'ler hazırlanıyor</div>
+            <div className="audeng-loading-sub">{loadingPct}% · RAM'de açılıyor, sonra anında çalacak</div>
+          </div>
+        </div>
+      )}
+      {loadError && (
+        <div className="audeng-loading audeng-loading-err" role="alert">
+          <div>
+            <div className="audeng-loading-title">Hızlı mod yüklenemedi</div>
+            <div className="audeng-loading-sub">Network stream kullanılıyor (yavaş olabilir)</div>
+          </div>
+        </div>
+      )}
 
       {/* AppScreen orijinal tasarım — controlled mode'da, gerçek audio bağlı */}
       <AppScreen tweaks={tweaks} audio={audioApi} />

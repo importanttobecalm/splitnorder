@@ -135,30 +135,37 @@ public class ColabInferenceService {
     }
 
     /**
-     * Her stem için <code>GET /api/stem/{job_id}/{stem}</code> çağrısı yapıp
-     * dosyayı lokal <code>stems/&lt;jobId&gt;/{stem}.wav</code> olarak kaydeder.
+     * Her stem için iki format indirir:
+     *   GET /api/stem/{job_id}/{stem}?fmt=mp3  → stems/&lt;jobId&gt;/{stem}.mp3
+     *   GET /api/stem/{job_id}/{stem}?fmt=wav  → stems/&lt;jobId&gt;/{stem}.wav
+     *
+     * MP3 arayüz streaming için (hızlı, ~4 MB), WAV indirme için (kayıpsız,
+     * ~40 MB). Java'da Stem.filePath MP3'ü işaret eder; WAV path'i convention
+     * ile türetilir (uzantı .mp3 → .wav).
      */
     private void downloadStems(Job job, String remoteJobId) throws IOException {
         Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId())).toAbsolutePath();
         Files.createDirectories(stemsDir);
 
         for (String stemType : STEMS) {
-            URL url = new URL(colabApiUrl + "/api/stem/" + remoteJobId + "/" + stemType);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("ngrok-skip-browser-warning", "true");
-            conn.setConnectTimeout(15000);
-            conn.setReadTimeout(120000);
+            for (String fmt : new String[]{"mp3", "wav"}) {
+                URL url = new URL(colabApiUrl + "/api/stem/" + remoteJobId + "/" + stemType + "?fmt=" + fmt);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("ngrok-skip-browser-warning", "true");
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(180000); // WAV ~40 MB → bol pay
 
-            int code = conn.getResponseCode();
-            if (code != 200) {
-                throw new IOException("Stem indirilemedi (" + stemType + "): HTTP " + code);
+                int code = conn.getResponseCode();
+                if (code != 200) {
+                    throw new IOException("Stem indirilemedi (" + stemType + "." + fmt + "): HTTP " + code);
+                }
+                Path target = stemsDir.resolve(stemType + "." + fmt);
+                try (InputStream in = conn.getInputStream()) {
+                    Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+                logger.info("Stem indirildi: {} ({} bytes)", target, target.toFile().length());
             }
-            Path target = stemsDir.resolve(stemType + ".wav");
-            try (InputStream in = conn.getInputStream()) {
-                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-            logger.info("Stem indirildi: {} ({} bytes)", target, target.toFile().length());
         }
     }
 
@@ -166,7 +173,7 @@ public class ColabInferenceService {
         Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId())).toAbsolutePath();
         Files.createDirectories(stemsDir);
         for (String stemType : STEMS) {
-            Path file = stemsDir.resolve(stemType + ".wav");
+            Path file = stemsDir.resolve(stemType + ".mp3");
             Stem stem = new Stem();
             stem.setJob(job);
             stem.setStemType(stemType);

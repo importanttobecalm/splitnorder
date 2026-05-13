@@ -142,6 +142,12 @@ Object.keys(PARTS).forEach((key) => {
 // belirdikten sonra fade-in olur. Bundan önce kullanıcı yazıyı görmez.
 masterTl.to('.manifesto-content', { opacity: 1, duration: 0.04, ease: 'power2.out' }, 0.74);
 
+// ============ FAZ 6.6: LOGO PARÇALARI GİZLENİR (0.76) ============
+// Manifesto pin başlamadan ÖNCE layer'ları master timeline kontrolünde
+// gizle. Böylece manifesto pin sırasında layer state'ine başka timeline
+// dokunmaz → reverse scroll'da takılı kalma sorunu olmaz.
+masterTl.to('.layer', { opacity: 0, duration: 0.04, ease: 'power2.out' }, 0.76);
+
 // ============ FAZ 7: MANİFESTO SENKRON MORF — AYRI PIN TIMELINE ============
 // Master timeline'a değil, manifesto section'ına bağlı ayrı bir ScrollTrigger.
 // pin: .manifesto-content viewport'a yapışır; end: '+=300%' = section
@@ -166,19 +172,11 @@ const manifestoTl = gsap.timeline({
   }
 });
 
-// Pin başlar başlamaz logo parçaları kaybolur (yazıyla çakışmasın).
-// Geri scroll'da master timeline reverse edip geri açar.
-manifestoTl.to('.layer', { opacity: 0, duration: 0.2, ease: 'power2.out' }, 0);
-
-morphParts.forEach(({ word, part, color }, i) => {
+// manifestoTl artık .layer'a hiç dokunmaz — layer kontrolü tamamen
+// masterTl'da (FAZ 6.6). İki timeline aynı target'a yazınca scrub
+// gecikmesi nedeniyle reverse scroll'da state takılı kalıyordu.
+morphParts.forEach(({ word, color }, i) => {
   manifestoTl.to(word, { color: color, ease: 'power2.out' }, i);
-  manifestoTl.to(`.layer.${part}`, {
-    x: () => getTargetX(part, 0.04),
-    y: () => getTargetY(part, 0.04),
-    scale: 0.04,
-    opacity: 0,
-    ease: 'power2.in'
-  }, i);
 });
 
 // Son cümle son rengin hemen ardından beyazlaşır

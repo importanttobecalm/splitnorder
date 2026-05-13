@@ -12,8 +12,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 public class UploadController {
@@ -24,9 +28,15 @@ public class UploadController {
     @Autowired
     private JobService jobService;
 
+    /**
+     * Eski {@code /upload} sayfası kaldırıldı — yükleme artık studio içinde
+     * modal olarak yapılıyor (nav'da "Yeni Ayır" butonu). Geriye dönük
+     * uyumluluk için bu GET endpoint'i studio'ya {@code ?upload=1} parametresi
+     * ile yönlendirir; main.jsx bunu görüp UploadModal'ı otomatik açar.
+     */
     @GetMapping("/upload")
-    public String showUploadForm(Model model) {
-        return "upload";
+    public String showUploadForm() {
+        return "redirect:/?upload=1";
     }
 
     @PostMapping("/upload")
@@ -55,7 +65,7 @@ public class UploadController {
 
             User user = (User) session.getAttribute("user");
             if (user == null) {
-                return "redirect:http://localhost:5173/login"; // Bu duruma AuthInterceptor sayesinde normalde düşmeyecek
+                return "redirect:/auth/login"; // AuthInterceptor sayesinde normalde düşmeyecek
             }
 
             Job job = jobService.createJob(user, file, model);
@@ -67,6 +77,57 @@ public class UploadController {
             logger.error("Upload error: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "upload.error.generic");
             return "redirect:/upload";
+        }
+    }
+
+    /**
+     * JSON sürümü — studio ekranındaki upload modal'ı bu endpoint'i çağırır.
+     * Form-based POST /upload geriye dönük uyumluluk için olduğu gibi kalır.
+     *
+     * <p>Ders pattern'i: {@code @PostMapping(".ajax") @ResponseBody}
+     * (ders slaytlarındaki {@code /ogrencileriGetir.ajax} kalıbının doğal
+     * genişlemesi — multipart upload ders kapsamında değil).</p>
+     *
+     * @return Başarı: {@code {jobId, status:"PENDING"}}, hata: {@code {error:"<code>"}}
+     */
+    @PostMapping("/upload.ajax")
+    @ResponseBody
+    public Map<String, Object> handleUploadAjax(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("model") String model,
+            HttpSession session) {
+
+        Map<String, Object> response = new HashMap<>();
+        try {
+            User user = (User) session.getAttribute("user");
+            if (user == null) {
+                response.put("error", "UNAUTHORIZED");
+                return response;
+            }
+            if (file.isEmpty()) {
+                response.put("error", "upload.error.empty");
+                return response;
+            }
+            if (file.getSize() > MAX_FILE_SIZE) {
+                response.put("error", "upload.error.tooLarge");
+                return response;
+            }
+            String filename = file.getOriginalFilename();
+            if (filename == null || !isValidAudioFile(filename)) {
+                response.put("error", "upload.error.invalidFormat");
+                return response;
+            }
+
+            Job job = jobService.createJob(user, file, model);
+            jobService.processJobAsync(job.getId());
+
+            response.put("jobId", job.getId());
+            response.put("status", "PENDING");
+            return response;
+        } catch (Exception e) {
+            logger.error("Upload.ajax error: {}", e.getMessage(), e);
+            response.put("error", "upload.error.generic");
+            return response;
         }
     }
 

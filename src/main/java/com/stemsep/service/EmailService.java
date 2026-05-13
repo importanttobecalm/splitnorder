@@ -27,6 +27,29 @@ public class EmailService {
         send(to, subject, html);
     }
 
+    public void sendPasswordResetEmail(String to, String username, String token, String lang) {
+        boolean isTr = "tr".equals(lang);
+        String subject = isTr ? "Splitnorder · Parola Sıfırlama" : "Splitnorder · Password Reset";
+        String url = env.getProperty("APP_BASE_URL", "http://localhost:8090") + "/auth/reset-password?token=" + token;
+        String html = buildPasswordResetHtml(username, url, isTr);
+        send(to, subject, html);
+    }
+
+    private String buildPasswordResetHtml(String username, String url, boolean isTr) {
+        String title    = isTr ? "Parolanı sıfırla" : "Reset your password";
+        String greeting = isTr ? ("Merhaba " + username + ",") : ("Hello " + username + ",");
+        String intro    = isTr
+                ? "Splitnorder hesabın için parola sıfırlama talebi aldık. Yeni bir parola belirlemek için aşağıdaki düğmeye tıkla."
+                : "We received a password reset request for your Splitnorder account. Click the button below to set a new password.";
+        String cta      = isTr ? "Parolamı sıfırla" : "Reset my password";
+        String fallback = isTr ? "Düğme çalışmazsa bu bağlantıyı tarayıcına yapıştır:" : "If the button doesn't work, paste this link into your browser:";
+        String expiry   = isTr ? "Bu bağlantı 1 saat boyunca geçerlidir." : "This link is valid for 1 hour.";
+        String ignore   = isTr
+                ? "Bu talebi sen yapmadıysan bu e-postayı yok sayabilirsin; parolan değişmedi."
+                : "If you didn't request this, you can safely ignore this email; your password remains unchanged.";
+        return buildEmailTemplate(title, greeting, intro, cta, url, fallback, expiry, ignore, isTr);
+    }
+
     /**
      * Müşterilerin geniş çoğunluğunda (Gmail, Outlook web/desktop, Apple Mail)
      * tutarlı görünmesi için: table-based layout, inline CSS, web font yok
@@ -44,10 +67,16 @@ public class EmailService {
         String ignoreNote  = isTr
                 ? "Bu kaydı sen yapmadıysan bu e-postayı yok sayabilirsin."
                 : "If you didn't create this account, you can safely ignore this email.";
-        String footer      = isTr
+        return buildEmailTemplate(title, greeting, intro, cta, url, fallback, expiryNote, ignoreNote, isTr);
+    }
+
+    private String buildEmailTemplate(String title, String greeting, String intro,
+                                      String cta, String url, String fallback,
+                                      String expiryNote, String ignoreNote, boolean isTr) {
+        String footer  = isTr
                 ? "Splitnorder · BM470 İleri Java Programlama Projesi · Düzce Üniversitesi"
                 : "Splitnorder · BM470 Advanced Java Programming Project · Düzce University";
-        String tagline     = isTr ? "Müziğini katmanlarına ayır." : "Split your music into stems.";
+        String tagline = isTr ? "Müziğini katmanlarına ayır." : "Split your music into stems.";
 
         return ""
             + "<!DOCTYPE html>\n"

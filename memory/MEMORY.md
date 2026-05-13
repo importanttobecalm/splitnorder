@@ -14,3 +14,4 @@
 - 🤖 [Grok UI Otomasyon Tarifi](reference_grok_recipe.md) — testid'ler, cevap konumu, tuzaklar — snapshot keşfini atlamak için
 - ⚙️ [Build Gotcha — JAVA_HOME 21](gotchas_build_java25.md) — Homebrew Java 25 + Lombok 1.18.42 patlıyor, build için Java 21 zorunlu
 - 🧪 [Hibernate 6 Criteria Mock Gotcha](gotchas_hibernate6_criteria_mock.md) — Mockito stub'larında jakarta.persistence.criteria.* yerine org.hibernate.query.criteria.Jpa* tipleri
+- 🚫 [Tasarımı sadeleştirme YASAK](feedback_no_simplification.md) — Verilen tasarım/yapı olduğu gibi korunur, "MVP'de basit" diye kırpmak yasak

@@ -816,3 +816,35 @@
 
 /* ───── Processing Overlay spinner ───── */
 @keyframes procSpin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+/* ───── AudioEngine RAM-load loading toast ─────
+   Studio'nun sağ üst köşesinde mini bir indikator. Tasarımı kapatmaz,
+   asıl studio interaktif kalır (kullanıcı blob hazır olana kadar zaten
+   network stream fallback ile dinleyebilir). */
+.audeng-loading {
+  position: absolute;
+  top: 16px; right: 16px;
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #DFE7F2;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(20, 40, 80, 0.12);
+  z-index: 40;
+  max-width: 280px;
+}
+.audeng-loading-err { border-color: #F0A45F; background: #FFF7EE; }
+.audeng-loading-spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid #EAF2FB;
+  border-top-color: #4A90E2;
+  border-radius: 50%;
+  animation: procSpin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+.audeng-loading-title {
+  font-size: 13px; font-weight: 600; color: #1E3A5F;
+}
+.audeng-loading-sub {
+  font-size: 11px; color: #6B7C93; margin-top: 2px;
+}

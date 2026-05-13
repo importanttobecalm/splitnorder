@@ -69,6 +69,16 @@ public class UserDao {
         return results.isEmpty() ? null : results.get(0);
     }
 
+    public User findByResetToken(String token) {
+        Session session = getCurrentSession();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<User> cq = cb.createQuery(User.class);
+        Root<User> root = cq.from(User.class);
+        cq.select(root).where(cb.equal(root.get("resetToken"), token));
+        List<User> results = session.createQuery(cq).getResultList();
+        return results.isEmpty() ? null : results.get(0);
+    }
+
     public void update(User user) {
         getCurrentSession().merge(user);
     }

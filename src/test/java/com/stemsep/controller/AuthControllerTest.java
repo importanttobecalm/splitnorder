@@ -3,7 +3,9 @@ package com.stemsep.controller;
 import com.stemsep.exception.EmailExistsException;
 import com.stemsep.exception.EmailNotVerifiedException;
 import com.stemsep.exception.InvalidCredentialsException;
+import com.stemsep.exception.InvalidTokenException;
 import com.stemsep.exception.UsernameExistsException;
+import com.stemsep.exception.VerificationTokenExpiredException;
 import com.stemsep.model.User;
 import com.stemsep.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -182,5 +187,107 @@ public class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("auth/register"))
                 .andExpect(model().attribute("error", "EMAIL_EXISTS"));
+    }
+
+    // ============================================================
+    // GET /auth/verify-email — token süresi / geçersizlik akışı
+    // ============================================================
+
+    /**
+     * Geçerli token → Service başarıyla doğrular, Controller login sayfasına
+     * {@code ?message=EMAIL_VERIFIED} ile redirect eder. Kullanıcıya pozitif
+     * geri bildirim (info kutusu) gösterilir.
+     */
+    @Test
+    public void verifyEmailGet_validToken_redirectsLoginWithMessage() throws Exception {
+        mockMvc.perform(get("/auth/verify-email").param("token", "tok-ok"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?message=EMAIL_VERIFIED"));
+    }
+
+    /**
+     * Süresi dolmuş token → Controller {@link VerificationTokenExpiredException}'ı
+     * yakalar ve login sayfasına {@code ?error=TOKEN_EXPIRED&email=<urlencoded>}
+     * ile yönlendirir. Email URL-encode edilmiş olmalı (özel karakter güvenliği).
+     * Bu redirect, login.jsp'deki resend formunun email'i bilmesini sağlar.
+     */
+    @Test
+    public void verifyEmailGet_expiredToken_redirectsLoginWithTokenExpiredAndEmail() throws Exception {
+        doThrow(new VerificationTokenExpiredException("user+test@b.com"))
+                .when(authService).verifyEmail("tok-old");
+
+        mockMvc.perform(get("/auth/verify-email").param("token", "tok-old"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?error=TOKEN_EXPIRED&email=user%2Btest%40b.com"));
+    }
+
+    /**
+     * Hiç eşleşmeyen token (örn. tampered link) → Controller
+     * {@link InvalidTokenException}'ı yakalar; email bilgisi yok, sadece
+     * {@code ?error=INVALID_TOKEN} ile login'e döner. JSP'de bu hatada
+     * resend formu görünmez (email param boş olduğu için).
+     */
+    @Test
+    public void verifyEmailGet_invalidToken_redirectsLoginWithInvalidTokenError() throws Exception {
+        doThrow(new InvalidTokenException("ghost"))
+                .when(authService).verifyEmail("ghost");
+
+        mockMvc.perform(get("/auth/verify-email").param("token", "ghost"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?error=INVALID_TOKEN"));
+    }
+
+    // ============================================================
+    // POST /auth/resend-verification
+    // ============================================================
+
+    /**
+     * Resend endpoint başarılı çalışırsa Service'i çağırır ve login sayfasına
+     * {@code ?message=VERIFICATION_RESENT} ile redirect eder. Email
+     * normalize edilmeli (trim + lowercase) — Service'e o şekilde geçer.
+     */
+    @Test
+    public void resendVerification_redirectsLoginWithMessage() throws Exception {
+        mockMvc.perform(post("/auth/resend-verification")
+                        .param("email", "  USER@B.com ")
+                        .param("lang", "tr"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?message=VERIFICATION_RESENT"));
+
+        verify(authService).resendVerificationEmail("user@b.com", "tr");
+    }
+
+    // ============================================================
+    // GET /auth/login — query param binding (redirect-after-error akışı)
+    // ============================================================
+
+    /**
+     * Login GET'inde {@code error} ve {@code email} query parametreleri
+     * model'e bağlanmalı. Bu olmadan verify-email redirect'inden gelen
+     * kullanıcı login.jsp'de hata kutusunu ve resend butonunu göremezdi
+     * (eski sürümde GET handler param bağlamıyordu).
+     */
+    @Test
+    public void loginGet_withErrorAndEmailParams_populatesModel() throws Exception {
+        mockMvc.perform(get("/auth/login")
+                        .param("error", "TOKEN_EXPIRED")
+                        .param("email", "a@b.com"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/login"))
+                .andExpect(model().attribute("error", "TOKEN_EXPIRED"))
+                .andExpect(model().attribute("email", "a@b.com"));
+    }
+
+    /**
+     * Login GET'inde {@code message} query parametresi de model'e bağlanır
+     * (örn. {@code ?message=VERIFICATION_RESENT}). Bu olmadan resend
+     * sonrasında kullanıcıya "mail tekrar gönderildi" info kutusu görünmezdi.
+     */
+    @Test
+    public void loginGet_withMessageParam_populatesModel() throws Exception {
+        mockMvc.perform(get("/auth/login").param("message", "VERIFICATION_RESENT"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("auth/login"))
+                .andExpect(model().attribute("message", "VERIFICATION_RESENT"));
     }
 }
