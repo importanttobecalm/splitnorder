@@ -42,5 +42,7 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
                 0                    // fileSizeThreshold
             )
         );
+        // Eşleşmeyen URL'lerde NoHandlerFoundException fırlat → GlobalExceptionHandler 404.jsp döner
+        registration.setInitParameter("throwExceptionIfNoHandlerFound", "true");
     }
 }
