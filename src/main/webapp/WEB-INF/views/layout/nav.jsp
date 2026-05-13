@@ -10,7 +10,7 @@
 
     <%-- Marka --%>
     <a href="${ctx}/" class="flex items-center gap-2">
-      <img src="${ctx}/static/img/logo.jpg" alt="Splitnorder" class="w-8 h-8 rounded-md object-cover">
+      <img src="${ctx}/static/img/logo.png" alt="Splitnorder" class="w-8 h-8 rounded-md object-contain">
       <span class="text-headline-sm font-headline-sm font-bold text-primary tracking-tight">Splitnorder</span>
     </a>
 

@@ -41,12 +41,23 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* JSP entegrasyon override'ları:
-   - mac-chrome: Claude Design'ın "browser preview" çerçevesi, prod'da yok say
-   - app-header: kendi başlığı; navbar'da zaten Splitnorder logo var, dublike */
+/* JSP entegrasyon override'ları — studio'yu navbar altına YERLEŞİK kılar:
+   - mac-chrome: Claude Design "browser preview" çerçevesi, prod'da yok say
+   - app-header: kendi başlığı; navbar'da zaten Splitnorder logo var, dublike
+   - hero-logo-img: <img src="assets/logoRB.png"> relatif yol, JSP root'tan
+     /assets/... çözündüğü için 404 → broken-image ikonu (sol üstte kalıntı).
+     hero-halo radyal blob'ları zaten görsel atmosferi sağlıyor, img gizli */
 #splitnorder-studio-root .mac-chrome,
-#splitnorder-studio-root .app-header { display: none !important; }
-#splitnorder-studio-root .app-fit { background: var(--bg); }
+#splitnorder-studio-root .app-header,
+#splitnorder-studio-root .hero-logo-img { display: none !important; }
+
+/* Kart hissini kaldır: app-fit kendi background'ını wrapper'la birleştirsin,
+   böylece navbar'dan studio'ya kesintisiz akar — "yerleşik" görünüm */
+#splitnorder-studio-root .app-fit {
+  background: var(--bg) !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
 #splitnorder-studio-root button { font-family: inherit; cursor: pointer; }
 
 /* ───── Splash ───── */

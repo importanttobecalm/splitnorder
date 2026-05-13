@@ -8,7 +8,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><fmt:message key="${param.titleKey != null ? param.titleKey : 'app.title'}" /></title>
-<link rel="icon" type="image/jpeg" href="${pageContext.request.contextPath}/static/img/logo.jpg">
+<link rel="icon" type="image/png" sizes="32x32" href="${pageContext.request.contextPath}/static/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="${pageContext.request.contextPath}/static/img/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="${pageContext.request.contextPath}/static/img/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="${pageContext.request.contextPath}/static/img/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="${pageContext.request.contextPath}/static/img/icon-512.png">
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
