@@ -1,0 +1,26 @@
+%% Splitnorder - Upload → Stem üretim akışı
+sequenceDiagram
+    autonumber
+    actor U as Kullanıcı
+    participant V as JSP View (upload.jsp)
+    participant C as UploadController
+    participant J as JobService
+    participant DAO as JobDao / StemDao (CriteriaBuilder)
+    participant DB as MySQL
+    participant CI as ColabInferenceService
+    participant F as Flask (Demucs)
+
+    U->>V: Ses dosyası + model seç
+    V->>C: POST /upload (multipart)
+    C->>J: createJob(user, file, model)
+    J->>DAO: save(Job: PENDING)
+    DAO->>DB: INSERT jobs
+    J->>CI: processJobAsync(jobId)
+    CI->>F: POST /api/separate (file, model, jobId)
+    F-->>CI: 200 OK (stem dosyaları hazır)
+    CI->>DAO: save(Stem x4: vocals/drums/bass/other)
+    DAO->>DB: INSERT stems
+    CI->>DAO: update Job → COMPLETED
+    DAO->>DB: UPDATE jobs
+    U->>C: GET /job/{id} (polling)
+    C-->>V: result.jsp + stem oynatıcı

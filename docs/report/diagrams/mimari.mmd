@@ -1,0 +1,36 @@
+%% Splitnorder - Mimari Blok Şeması (BM470 Final Raporu)
+%% Word'e PNG olarak export edilebilir (mermaid.live veya VSCode Mermaid eklentisi)
+flowchart LR
+    subgraph Client["İstemci"]
+        B["Tarayıcı<br/>(JSP + JSTL + i18n TR/EN)"]
+    end
+
+    subgraph AppServer["Uygulama Sunucusu (Tomcat 10)"]
+        IF["CharacterEncodingFilter<br/>(UTF-8)"]
+        IC["RequestLoggingInterceptor<br/>+ AuthInterceptor"]
+        C["Spring MVC 6 Controller<br/>(Home/Auth/Upload/Job/History)"]
+        S["Service Katmanı<br/>(Auth, Job, Stem, Email, ColabInference)"]
+        D["DAO Katmanı<br/>(UserDao, JobDao, StemDao)<br/>CriteriaBuilder"]
+        H["Hibernate 6.1.7<br/>(c3p0 connection pool)"]
+    end
+
+    subgraph DB["Veritabanı"]
+        M[("Oracle Cloud MySQL 8<br/>users · jobs · stems")]
+    end
+
+    subgraph AI["AI Servisi (GPU)"]
+        F["Python Flask API<br/>(/api/separate)"]
+        DM["Demucs Modeli<br/>(htdemucs / mdx_extra)"]
+    end
+
+    B -->|HTTP/HTTPS| IF
+    IF --> IC
+    IC --> C
+    C --> S
+    S --> D
+    D --> H
+    H -->|JDBC| M
+    S -->|REST/Multipart| F
+    F --> DM
+    DM -->|WAV stems| F
+    F -->|stem dosyaları| S
