@@ -15,7 +15,7 @@
     <div class="absolute bottom-[30%] left-[15%] w-56 h-32 waveform-card-purple rounded-xl blur-sm opacity-60 transform -rotate-12"></div>
 
     <div class="z-10 flex flex-col items-center text-center px-gutter max-w-lg">
-      <img alt="Splitnorder" class="w-32 h-32 mb-8 object-contain drop-shadow-xl" src="${ctx}/static/img/logo.png" onerror="this.style.display='none'">
+      <img alt="Splitnorder" class="w-32 h-32 mb-8 object-contain drop-shadow-xl" src="${ctx}/static/img/logo.jpg" onerror="this.style.display='none'">
       <h1 class="font-display-lg text-display-lg text-on-primary-fixed mb-4 tracking-tight">Splitnorder</h1>
       <p class="font-body-lg text-body-lg text-on-surface-variant font-medium">
         <fmt:message key="brand.tagline" />

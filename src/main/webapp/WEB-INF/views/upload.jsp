@@ -18,7 +18,7 @@
 
   <c:if test="${not empty error}">
     <div class="w-full max-w-[920px] mb-6 p-4 rounded-xl bg-error-container text-on-error-container font-body-sm">
-      <fmt:message key="upload.error.${error}" />
+      <fmt:message key="${error}" />
     </div>
   </c:if>
 

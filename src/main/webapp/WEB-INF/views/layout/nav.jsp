@@ -10,7 +10,7 @@
 
     <%-- Marka --%>
     <a href="${ctx}/" class="flex items-center gap-2">
-      <span class="material-symbols-outlined text-primary text-[28px]" style="font-variation-settings: 'FILL' 1;">music_note</span>
+      <img src="${ctx}/static/img/logo.jpg" alt="Splitnorder" class="w-8 h-8 rounded-md object-cover">
       <span class="text-headline-sm font-headline-sm font-bold text-primary tracking-tight">Splitnorder</span>
     </a>
 
