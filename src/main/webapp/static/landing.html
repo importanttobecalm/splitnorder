@@ -236,8 +236,24 @@
   }
   .hero-content h1 em { font-style: italic; color: var(--ink-dim); }
 
-  /* Manifesto bölümü 2 ekran yüksekliği — renkli kelime geçişlerine yeterli scroll mesafesi ver */
-  .sec.manifesto { min-height: 220vh; }
+  /* Manifesto bölümü 2.4 ekran yüksekliği — renkli kelime geçişlerine yeterli scroll mesafesi ver.
+     Block layout + sticky content → user bu bölümü scroll ederken yazı ekran merkezine
+     yapışır; renkler değişirken sabit kalır, son rengin ardından bölüm bittiğinde aşağı akar. */
+  .sec.manifesto {
+    display: block;
+    min-height: 240vh;
+    padding: 0;
+  }
+  .sec.manifesto .manifesto-content {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
   .manifesto-content { max-width: 760px; text-align: center; padding: 0 32px; }
   .manifesto-content .lead {
     font-family: 'Instrument Serif', serif;
