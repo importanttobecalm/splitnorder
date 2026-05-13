@@ -1,10 +1,14 @@
 package com.stemsep.exception;
 
-public class VerificationTokenExpiredException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(value = HttpStatus.GONE)
+public class VerificationTokenExpiredException extends AppException {
     private final String email;
 
     public VerificationTokenExpiredException(String email) {
-        super("Verification token expired for email=" + email);
+        super(ErrorCode.TOKEN_EXPIRED, "Verification token expired for email=" + email);
         this.email = email;
     }
 

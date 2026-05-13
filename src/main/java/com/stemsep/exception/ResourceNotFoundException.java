@@ -4,11 +4,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.NOT_FOUND)
-public class ResourceNotFoundException extends RuntimeException {
+public class ResourceNotFoundException extends AppException {
     public ResourceNotFoundException() {
-        super("Kaynak bulunamadı!");
+        super(ErrorCode.RESOURCE_NOT_FOUND, "Kaynak bulunamadı!");
     }
     public ResourceNotFoundException(String msg) {
-        super(msg);
+        super(ErrorCode.RESOURCE_NOT_FOUND, msg);
     }
 }

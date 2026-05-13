@@ -1,12 +1,12 @@
 package com.stemsep.i18n;
 
+import com.stemsep.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -23,6 +23,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code ???auth.error.INVALID_CREDENTIALS???} bug'ı, bu sözleşme yokken
  * doğdu; bu test onu bir daha doğmasını engeller.</p>
  *
+ * <p><b>Enum-driven kontrat:</b> Önceden manuel string listesi vardı; yeni
+ * exception eklerken o listeyi güncellemeyi unutmak regression doğuruyordu.
+ * Artık {@link ErrorCode} enum'u tek kaynak — reflection ile gezilir,
+ * her sabit için {@code getMessageKey()} TR+EN'de mevcut mu otomatik
+ * doğrulanır. Yeni hata eklemenin maliyeti: enum'a 1 satır + properties'e
+ * 2 satır.</p>
+ *
  * <p><b>Slayt referansı doğrudan yok</b> — proje gereksinim dokümanındaki
  * "açıklamalı birim testler" beklentisinin uygulamalı bir genişlemesidir.
  * Saf JUnit 5 + JDK Properties API; ek bağımlılık yok.</p>
@@ -33,17 +40,6 @@ public class I18nKeyContractTest {
 
     private static Properties tr;
     private static Properties en;
-
-    /** Controller'ın Model'e koyduğu hata kodlarının tam listesi (UPPER_SNAKE_CASE). */
-    private static final List<String> AUTH_ERROR_CODES = List.of(
-            "INVALID_CREDENTIALS",
-            "EMAIL_NOT_VERIFIED",
-            "TOKEN_EXPIRED",
-            "INVALID_TOKEN",
-            "USERNAME_EXISTS",
-            "EMAIL_EXISTS",
-            "INTERNAL_ERROR"
-    );
 
     @BeforeAll
     public static void loadBundles() throws Exception {
@@ -79,15 +75,20 @@ public class I18nKeyContractTest {
     }
 
     /**
-     * Controller'ın koyduğu HER auth.error.XXX key'i TR ve EN dosyalarında
-     * tanımlı VE boş değil olmalı. Bug regression koruması.
+     * <b>ErrorCode enum sözleşmesi:</b> Reflection ile {@link ErrorCode}'in
+     * her sabitini gezer, {@code getMessageKey()} TR ve EN'de tanımlı ve
+     * boş değil olmalı. Yeni bir {@code ErrorCode} eklenince properties'e
+     * key eklemeyi unutursak test patlar — production'da
+     * {@code ???auth.error.XXX???} sızıntısı yaşanmadan önce CI yakalar.
      */
     @Test
-    public void authErrorCodes_existInBothBundles_withNonEmptyValues() {
-        for (String code : AUTH_ERROR_CODES) {
-            String key = "auth.error." + code;
-            assertContainsNonEmpty(tr, key, "messages_tr_TR.properties");
-            assertContainsNonEmpty(en, key, "messages_en_US.properties");
+    public void everyErrorCodeMessageKey_existsInBothBundles_withNonEmptyValues() {
+        for (ErrorCode code : ErrorCode.values()) {
+            String key = code.getMessageKey();
+            assertContainsNonEmpty(tr, key,
+                    "messages_tr_TR.properties  (ErrorCode." + code.name() + ")");
+            assertContainsNonEmpty(en, key,
+                    "messages_en_US.properties  (ErrorCode." + code.name() + ")");
         }
     }
 
@@ -105,6 +106,21 @@ public class I18nKeyContractTest {
         for (String key : en.stringPropertyNames()) {
             assertFalse(en.getProperty(key).contains("???"),
                     "EN bundle değeri ??? içeriyor: " + key);
+        }
+    }
+
+    /**
+     * Hiçbir {@link ErrorCode} sabiti aynı {@code messageKey}'i paylaşmamalı
+     * — duplicate key, iki farklı hatanın aynı mesajı göstermesine yol açar
+     * ve kullanıcı için debug zorlaşır. Bu test enum'un disiplinini korur.
+     */
+    @Test
+    public void errorCode_messageKeysAreUnique() {
+        Set<String> seen = new HashSet<>();
+        for (ErrorCode code : ErrorCode.values()) {
+            String key = code.getMessageKey();
+            assertTrue(seen.add(key),
+                    "Duplicate messageKey: " + key + " (ErrorCode." + code.name() + ")");
         }
     }
 
