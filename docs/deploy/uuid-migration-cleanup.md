@@ -1,135 +1,88 @@
-# UUID Migration — Sunucu Temizlik & Deploy Adımları
+# UUID Migration — vespay Sunucu Deploy
 
 > Job URL'leri `/job/19` → `/job/<uuid>` formatına geçti. Mevcut DB'deki
 > jobların `public_id` kolonu olmadığı için NOT NULL constraint patlar.
 > **Tüm jobs/stems/users verilerini silip yeniden test edeceğiz.**
 >
-> Komutları sırayla, **bir önceki başarılı olduktan sonra** çalıştır.
+> **Hedef sunucu:** vespay (`130.61.66.0`), Docker Compose stack
+> **Komutlar:** Mac terminalinden tek satır SSH ile çalıştırılır (yapıştır → Enter).
 
 ---
 
-## 1. Projeyi sunucuda güncelle
+## 1. WAR'ı lokalde derle (Mac)
 
 ```bash
-cd /path/to/splitnorder
-git pull origin feature/studio-redesign
+cd /Users/yusufbulut/Documents/Projelerim/JAVAodev/splitnorder && JAVA_HOME=$(/usr/libexec/java_home -v 21) mvn clean package -DskipTests
 ```
 
-## 2. WAR'ı derle
-
-```bash
-mvn clean package -DskipTests
-```
-
-## 3. Tomcat'i durdur (DB temizliği öncesi)
-
-```bash
-docker stop splitnorder-tomcat
-```
-
-## 4. MySQL'e bağlan
-
-```bash
-docker exec -it splitnorder-mysql mysql -uroot -p stemsep_db
-```
-
-> Şifre sorulunca root şifresini gir (compose dosyasında tanımlı olan).
-
-## 5. Tabloları temizle (MySQL prompt içinde)
-
-```sql
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE stems;
-TRUNCATE TABLE jobs;
-TRUNCATE TABLE users;
-SET FOREIGN_KEY_CHECKS = 1;
-EXIT;
-```
-
-> Eğer `public_id` kolonu yeni schema'da otomatik eklenmezse (Hibernate
-> `update` modu bazen ALTER yapmaz), aşağıdaki fallback'i çalıştır:
->
-> ```sql
-> DROP TABLE stems;
-> DROP TABLE jobs;
-> DROP TABLE users;
-> EXIT;
-> ```
->
-> Tomcat startup'ta tablolar sıfırdan oluşur.
-
-## 6. Yüklenen audio dosyalarını sil
-
-```bash
-docker run --rm -v splitnorder_uploads:/data alpine sh -c 'rm -rf /data/*'
-docker run --rm -v splitnorder_stems:/data alpine sh -c 'rm -rf /data/*'
-```
-
-> Eğer volume isimleri farklıysa (compose'da kontrol et), şunu kullan:
->
-> ```bash
-> docker exec splitnorder-tomcat sh -c 'rm -rf /usr/local/tomcat/uploads/* /usr/local/tomcat/stems/*'
-> ```
-> (Bu komutu Tomcat **çalışırken** çalıştırman gerekir, 3. adımı geçici skip et.)
-
-## 7. WAR'ı Tomcat'e kopyala
-
-```bash
-docker cp target/splitnorder.war splitnorder-tomcat:/usr/local/tomcat/webapps/ROOT.war
-```
-
-> WAR adı / hedef path projende farklıysa mevcut deploy script'ini kullan.
-
-## 8. Tomcat'i başlat
-
-```bash
-docker start splitnorder-tomcat
-```
-
-## 9. Tomcat loglarını izle (schema kurulumu için)
-
-```bash
-docker logs -f splitnorder-tomcat
-```
-
-> Şu satırı görmelisin:
-> ```
-> Hibernate: alter table jobs add column public_id varchar(36) not null
-> ```
-> veya tablolar drop edildiyse:
-> ```
-> Hibernate: create table jobs (id bigint not null auto_increment, public_id varchar(36) not null, ...)
-> ```
->
-> Hata olmadan startup tamamlanınca `Ctrl+C` ile logdan çık.
-
-## 10. Şema kontrolü (opsiyonel)
-
-```bash
-docker exec -it splitnorder-mysql mysql -uroot -p stemsep_db -e "DESCRIBE jobs;"
-```
-
-> Çıktıda `public_id | varchar(36) | NO | UNI` satırını görmelisin.
+> Çıktıda `BUILD SUCCESS` görmelisin. `target/stemsep.war` ~43 MB.
 
 ---
 
-## 11. Smoke Test (tarayıcıdan)
+## 2. WAR'ı vespay'e yükle
 
-1. `https://splitnorder.space/auth/register` — yeni test kullanıcısı oluştur
-2. Gelen doğrulama mailini aç, linke tıkla → login sayfasına yönlendirir
-3. Login ol
-4. Bir audio dosyası yükle
-5. **URL'ye bak**: `https://splitnorder.space/?jobId=<36 karakterli uuid>` olmalı
-6. Studio'da job tamamlandığında `/job/<uuid>` linkleri çalışmalı
-7. History sayfasında listeleme + tıklama → UUID URL ile açılmalı
-8. Stems klasörünü kontrol et: `docker exec splitnorder-tomcat ls /usr/local/tomcat/stems/`
-   → klasörler `<uuid>` formatında olmalı (eski `19`, `20` yok)
+```bash
+scp -i ~/Desktop/ssh-key-2026-02-24.key /Users/yusufbulut/Documents/Projelerim/JAVAodev/splitnorder/target/stemsep.war ubuntu@130.61.66.0:/home/ubuntu/splitnorder-demo/stemsep.war
+```
+
+---
+
+## 3. DB temizliği + dosya temizliği + Tomcat restart + schema doğrulama (TEK SATIR)
+
+> Yapıştır → Enter. Şifre sorulmaz (key ile auth). 8 saniye bekleyip `jobs`
+> tablosunun yeni schema'sını gösterir.
+
+```bash
+ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 "docker exec splitnorder-mysql mysql -uroot -pO8UbXqKgLqtSTSgYdjPVBd94skCT stemsep_db -e 'SET FOREIGN_KEY_CHECKS=0; DROP TABLE stems; DROP TABLE jobs; DROP TABLE users; SET FOREIGN_KEY_CHECKS=1;' && docker exec splitnorder-tomcat sh -c 'rm -rf /usr/local/tomcat/uploads/* /usr/local/tomcat/stems/*' ; docker restart splitnorder-tomcat && sleep 8 && docker exec splitnorder-mysql mysql -uroot -pO8UbXqKgLqtSTSgYdjPVBd94skCT stemsep_db -e 'DESCRIBE jobs;'"
+```
+
+**Beklenen çıktı:** `DESCRIBE jobs` tablosunda **`public_id | varchar(36) | NO | UNI`** satırı görünmeli.
+
+---
+
+## 4. Tomcat startup loglarını izle (opsiyonel)
+
+```bash
+ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 "docker logs --tail 50 splitnorder-tomcat"
+```
+
+> Hata aramak için: `... 2>&1 | grep -iE 'error|exception|fail'`
+
+---
+
+## 5. Canlı sayfayı kontrol et (tarayıcı)
+
+1. `https://splitnorder.space/auth/register` → yeni test kullanıcısı
+2. Doğrulama maili gelir → linke tıkla
+3. Login ol → bir audio dosyası yükle
+4. URL'ye bak: `/?jobId=<36 karakterli uuid>` formatında olmalı
+5. History sayfasında joblar açılsın, hepsi UUID URL
+
+### Stems klasörü kontrolü
+
+```bash
+ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 "docker exec splitnorder-tomcat ls /usr/local/tomcat/stems/"
+```
+
+> Klasör adları UUID formatında olmalı (eski `19`, `20` görünmez — DB temizlendi).
 
 ---
 
 ## Sorun çıkarsa
 
-- **Schema migration patladı**: 5. adımdaki fallback (`DROP TABLE`) yolunu kullan
-- **Tomcat startup hata veriyor**: `docker logs splitnorder-tomcat | tail -50` ile hatayı paylaş
-- **Eski URL'ler 404**: bu beklenen, eski Long ID linkleri artık geçersiz (DB'de zaten yok)
-- **Public_id null hatası**: PrePersist tetiklenmiyor demektir, Job entity'sinin doğru deploy edildiğini kontrol et (`docker exec splitnorder-tomcat jar tf /usr/local/tomcat/webapps/ROOT.war | grep Job.class`)
+### Tomcat başlamadı / 502 dönüyor
+```bash
+ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 "docker logs --tail 100 splitnorder-tomcat 2>&1 | tail -40"
+```
+
+### Schema'da `public_id` yok
+Hibernate `ddl-auto=update` bazen kolon eklemez. 3. adımdaki DROP TABLE zaten tabloyu sıfırdan kurduğu için bu durumda olmamalı. Yine de:
+```bash
+ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 "docker exec splitnorder-mysql mysql -uroot -pO8UbXqKgLqtSTSgYdjPVBd94skCT stemsep_db -e 'ALTER TABLE jobs ADD COLUMN public_id VARCHAR(36) NOT NULL UNIQUE;'"
+```
+
+### Mail gelmiyor
+SMTP config gitignored `hibernate.properties`'te. Tomcat loglarında `EmailService` hatası var mı bak:
+```bash
+ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 "docker logs splitnorder-tomcat 2>&1 | grep -i email | tail -20"
+```
