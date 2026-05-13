@@ -239,24 +239,9 @@
   }
   .hero-content h1 em { font-style: italic; color: var(--ink-dim); }
 
-  /* Manifesto bölümü 2.4 ekran yüksekliği — renkli kelime geçişlerine yeterli scroll mesafesi ver.
-     Block layout + sticky content → user bu bölümü scroll ederken yazı ekran merkezine
-     yapışır; renkler değişirken sabit kalır, son rengin ardından bölüm bittiğinde aşağı akar. */
-  .sec.manifesto {
-    display: block;
-    min-height: 240vh;
-    padding: 0;
-  }
-  .sec.manifesto .manifesto-content {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+  /* Manifesto: GSAP ScrollTrigger pin ile yönetiliyor (renk geçişleriyle senkron).
+     Section sadece trigger, pin'leme JS tarafından yapılıyor. */
+  .sec.manifesto { min-height: 100vh; }
   .manifesto-content { max-width: 760px; text-align: center; padding: 0 32px; }
   .manifesto-content .lead {
     font-family: 'Instrument Serif', serif;
@@ -688,43 +673,46 @@ Object.keys(PARTS).forEach((key) => {
   masterTl.to(`.${cls}`, { opacity: 1, duration: 0.06 }, 0.62 + i * 0.022);
 });
 
-// ============ FAZ 7: MANİFESTO SENKRON MORF (0.74 - 1.00) ============
-// Manifesto okunurken her kelime silik renkten kendi rengine canlanır,
-// aynı anda ilgili parça yazıya dönüşür.
-// Sırayla: Vokal (kırmızı), davul (turuncu), bas (mor), diğer (turkuaz)
-// Aralıklar geniş tutuldu (~0.07 birim = sayfa scroll'unun %7'si) → kullanıcı
-// her kelimenin renk değişimini rahatça takip edebilsin.
-const morphSequence = [
-  { word: '.manifesto-content .accent',    part: 'vokal', color: '#e2494a', at: 0.74 },
-  { word: '.manifesto-content .accent-2',  part: 'davul', color: '#efa060', at: 0.81 },
-  { word: '.manifesto-content .accent-3',  part: 'bas',   color: '#8b6cb8', at: 0.88 },
-  { word: '.manifesto-content .accent-4',  part: 'diger', color: '#36b9ad', at: 0.95 },
+// ============ FAZ 7: MANİFESTO SENKRON MORF — AYRI PIN TIMELINE ============
+// Master timeline'a değil, manifesto section'ına bağlı ayrı bir ScrollTrigger.
+// pin: .manifesto-content viewport'a yapışır; end: '+=300%' = section
+// kendi başına 3 viewport boyu scroll'la dolaşır → 4 renk + closing için
+// fazlasıyla yer var, otomatik eşit dağılım.
+const morphParts = [
+  { word: '.manifesto-content .accent',    part: 'vokal', color: '#e2494a' },
+  { word: '.manifesto-content .accent-2',  part: 'davul', color: '#efa060' },
+  { word: '.manifesto-content .accent-3',  part: 'bas',   color: '#8b6cb8' },
+  { word: '.manifesto-content .accent-4',  part: 'diger', color: '#36b9ad' },
 ];
 
-morphSequence.forEach(({ word, part, color, at }) => {
-  // kelime silikten kendi rengine canlanır (vurgu efekti) — daha uzun süreyle
-  masterTl.to(word, {
-    color: color,
-    duration: 0.06,
-    ease: 'power2.out'
-  }, at);
-  // ilgili parça yazıya dönüşür (küçülüp kaybolur)
-  masterTl.to(`.layer.${part}`, {
+const manifestoTl = gsap.timeline({
+  scrollTrigger: {
+    trigger: '.sec.manifesto',
+    start: 'top top',
+    end: '+=300%',           // 3 ekran boyu pin scroll'u — renklere bol nefes
+    pin: '.manifesto-content',
+    pinSpacing: true,
+    scrub: 1,
+    invalidateOnRefresh: true,
+  }
+});
+
+morphParts.forEach(({ word, part, color }, i) => {
+  manifestoTl.to(word, { color: color, ease: 'power2.out' }, i);
+  manifestoTl.to(`.layer.${part}`, {
     x: () => getTargetX(part, 0.04),
     y: () => getTargetY(part, 0.04),
     scale: 0.04,
     opacity: 0,
-    duration: 0.06,
     ease: 'power2.in'
-  }, at);
+  }, i);
 });
 
-// Son cümle son morf'tan hemen sonra kendi rengine geçer (son kelimeyle paralel)
-masterTl.to('.manifesto-content .closing', {
+// Son cümle son rengin hemen ardından beyazlaşır
+manifestoTl.to('.manifesto-content .closing', {
   color: '#f5f2ea',
-  duration: 0.05,
   ease: 'power2.out'
-}, 0.95);
+}, morphParts.length);
 
 // MOUSE PARALLAX
 const layers = {
