@@ -71,7 +71,7 @@ public class UploadController {
             Job job = jobService.createJob(user, file, model);
             jobService.processJobAsync(job.getId());
 
-            return "redirect:/job/" + job.getId();
+            return "redirect:/job/" + job.getPublicId();
 
         } catch (Exception e) {
             logger.error("Upload error: {}", e.getMessage(), e);
@@ -121,7 +121,7 @@ public class UploadController {
             Job job = jobService.createJob(user, file, model);
             jobService.processJobAsync(job.getId());
 
-            response.put("jobId", job.getId());
+            response.put("jobId", job.getPublicId());
             response.put("status", "PENDING");
             return response;
         } catch (Exception e) {

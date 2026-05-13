@@ -123,4 +123,34 @@ public class JobServiceTest {
 
         verify(jobDao, never()).update(any());
     }
+
+    /**
+     * URL'lerde sıralı Long ID yerine UUID kullanmak için {@code publicId}
+     * alanı eklendi — Service {@code getJobByPublicId} DAO'nun yeni lookup
+     * metoduna delege etmeli. Controller bu yol üzerinden Job çözer.
+     */
+    @Test
+    public void testGetJobByPublicIdReturnsJob() {
+        Job job = new Job();
+        job.setId(1L);
+        job.setPublicId("11111111-2222-3333-4444-555555555555");
+        job.setOriginalFilename("uuid.mp3");
+        when(jobDao.findByPublicId("11111111-2222-3333-4444-555555555555")).thenReturn(job);
+
+        Job result = jobService.getJobByPublicId("11111111-2222-3333-4444-555555555555");
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("uuid.mp3", result.getOriginalFilename());
+    }
+
+    /**
+     * Bilinmeyen publicId → DAO {@code null} döner → Service {@code null}
+     * döner (controller bunu /history redirect'ine çevirir).
+     */
+    @Test
+    public void testGetJobByPublicIdReturnsNullWhenNotExists() {
+        when(jobDao.findByPublicId("ghost")).thenReturn(null);
+        assertNull(jobService.getJobByPublicId("ghost"));
+    }
 }

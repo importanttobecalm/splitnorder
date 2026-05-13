@@ -76,6 +76,11 @@ public class JobService {
     }
 
     @Transactional(readOnly = true)
+    public Job getJobByPublicId(String publicId) {
+        return jobDao.findByPublicId(publicId);
+    }
+
+    @Transactional(readOnly = true)
     public List<Job> getJobsByUser(Long userId) {
         return jobDao.findByUserId(userId);
     }

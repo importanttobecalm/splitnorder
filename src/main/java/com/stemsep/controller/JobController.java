@@ -32,28 +32,28 @@ public class JobController {
     @Autowired
     private StemService stemService;
 
-    @GetMapping({"/{id}", "/{id}/result"})
-    public String showJob(@PathVariable Long id, HttpSession session, Model model) {
+    @GetMapping({"/{publicId}", "/{publicId}/result"})
+    public String showJob(@PathVariable String publicId, HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
             return "redirect:/auth/login";
         }
-        
-        Job job = jobService.getJob(id);
+
+        Job job = jobService.getJobByPublicId(publicId);
         if (job == null || !job.getUser().getId().equals(user.getId())) {
             return "redirect:/history";
         }
 
         // Tüm durumları studio'ya yönlendir — HomeController jobStatus'a göre
         // doğru overlay'i (processing / audio engine / error) gösterir.
-        return "redirect:/?jobId=" + job.getId();
+        return "redirect:/?jobId=" + job.getPublicId();
     }
 
-    @GetMapping("/{id}/status")
+    @GetMapping("/{publicId}/status")
     @ResponseBody
-    public Map<String, Object> getJobStatus(@PathVariable Long id, HttpSession session) {
+    public Map<String, Object> getJobStatus(@PathVariable String publicId, HttpSession session) {
         User user = (User) session.getAttribute("user");
-        Job job = jobService.getJob(id);
+        Job job = jobService.getJobByPublicId(publicId);
         Map<String, Object> response = new HashMap<>();
 
         if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
@@ -61,19 +61,19 @@ public class JobController {
             return response;
         }
 
-        response.put("id", job.getId());
+        response.put("id", job.getPublicId());
         response.put("status", job.getStatus().name());
         response.put("filename", job.getOriginalFilename());
 
         return response;
     }
 
-    @GetMapping("/{id}/stream/{stemType}")
-    public void streamStem(@PathVariable Long id, @PathVariable String stemType,
+    @GetMapping("/{publicId}/stream/{stemType}")
+    public void streamStem(@PathVariable String publicId, @PathVariable String stemType,
                            @RequestParam(value = "fmt", required = false) String fmt,
                            HttpSession session, HttpServletResponse response) throws IOException {
         User user = (User) session.getAttribute("user");
-        Job job = jobService.getJob(id);
+        Job job = jobService.getJobByPublicId(publicId);
 
         if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
             response.sendError(403);
@@ -90,7 +90,7 @@ public class JobController {
             file = new File(job.getOriginalFilePath());
             contentType = "audio/mpeg";
         } else {
-            Stem stem = stemService.getStemByJobAndType(id, stemType);
+            Stem stem = stemService.getStemByJobAndType(job.getId(), stemType);
             if (stem == null || stem.getFilePath() == null) {
                 response.sendError(404);
                 return;
@@ -147,18 +147,18 @@ public class JobController {
         }
     }
 
-    @GetMapping("/{id}/download/{stemType}")
-    public void downloadStem(@PathVariable Long id, @PathVariable String stemType,
+    @GetMapping("/{publicId}/download/{stemType}")
+    public void downloadStem(@PathVariable String publicId, @PathVariable String stemType,
                              HttpSession session, HttpServletResponse response) throws IOException {
         User user = (User) session.getAttribute("user");
-        Job job = jobService.getJob(id);
-        
+        Job job = jobService.getJobByPublicId(publicId);
+
         if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
             response.sendError(403);
             return;
         }
-        
-        Stem stem = stemService.getStemByJobAndType(id, stemType);
+
+        Stem stem = stemService.getStemByJobAndType(job.getId(), stemType);
         if (stem == null || stem.getFilePath() == null) {
             response.sendError(404);
             return;
@@ -190,12 +190,12 @@ public class JobController {
         }
     }
 
-    @GetMapping("/{id}/download-all")
-    public void downloadAll(@PathVariable Long id,
+    @GetMapping("/{publicId}/download-all")
+    public void downloadAll(@PathVariable String publicId,
                             @RequestParam(value = "format", required = false) String format,
                             HttpSession session, HttpServletResponse response) throws IOException {
         User user = (User) session.getAttribute("user");
-        Job job = jobService.getJob(id);
+        Job job = jobService.getJobByPublicId(publicId);
 
         if (job == null || user == null || !job.getUser().getId().equals(user.getId())) {
             response.sendError(403);

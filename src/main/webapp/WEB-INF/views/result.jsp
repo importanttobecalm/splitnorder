@@ -25,7 +25,7 @@
         <p class="font-mono-label text-mono-label text-on-surface-variant uppercase">${job.modelUsed} · ${fn:replace(fn:substring(job.createdAt, 0, 16), "T", " ")}</p>
       </div>
     </div>
-    <a href="${ctx}/job/${job.id}/download-all" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2 shadow-sm">
+    <a href="${ctx}/job/${job.publicId}/download-all" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2 shadow-sm">
       <span class="material-symbols-outlined">download</span>
       <fmt:message key="studio.downloadAll" />
     </a>
@@ -50,7 +50,7 @@
           <div class="flex gap-2">
             <button type="button" data-action="solo" title="Solo" class="stem-btn w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">S</button>
             <button type="button" data-action="mute" title="Mute" class="stem-btn w-8 h-8 rounded bg-surface-variant text-on-surface-variant font-mono-label hover:bg-surface-dim transition-colors">M</button>
-            <a href="${ctx}/job/${job.id}/download/${stem}" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant hover:bg-surface-dim transition-colors flex items-center justify-center">
+            <a href="${ctx}/job/${job.publicId}/download/${stem}" class="w-8 h-8 rounded bg-surface-variant text-on-surface-variant hover:bg-surface-dim transition-colors flex items-center justify-center">
               <span class="material-symbols-outlined text-[18px]">download</span>
             </a>
           </div>
@@ -68,7 +68,7 @@
         </div>
 
         <audio controls data-role="audio" class="w-full mt-2">
-          <source src="${ctx}/job/${job.id}/stream/${stem}" type="audio/wav">
+          <source src="${ctx}/job/${job.publicId}/stream/${stem}" type="audio/wav">
         </audio>
       </div>
     </c:forEach>
@@ -86,7 +86,7 @@
       </div>
     </div>
     <audio controls class="w-full mt-4">
-      <source src="${ctx}/job/${job.id}/stream/original" type="audio/mpeg">
+      <source src="${ctx}/job/${job.publicId}/stream/original" type="audio/mpeg">
     </audio>
   </div>
 

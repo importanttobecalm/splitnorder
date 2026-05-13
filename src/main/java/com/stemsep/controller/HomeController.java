@@ -18,7 +18,7 @@ public class HomeController {
     private JobService jobService;
 
     @GetMapping("/")
-    public String home(@RequestParam(value = "jobId", required = false) Long jobId,
+    public String home(@RequestParam(value = "jobId", required = false) String jobId,
                        HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
@@ -27,7 +27,7 @@ public class HomeController {
 
         Job job = resolveJob(user, jobId);
         if (job != null) {
-            model.addAttribute("jobId", job.getId());
+            model.addAttribute("jobId", job.getPublicId());
             model.addAttribute("jobStatus", job.getStatus().name());
             model.addAttribute("jobFilename", job.getOriginalFilename());
         } else {
@@ -50,9 +50,9 @@ public class HomeController {
      *   <li>Hiç iş yoksa {@code null}</li>
      * </ol>
      */
-    private Job resolveJob(User user, Long jobId) {
-        if (jobId != null) {
-            Job candidate = jobService.getJob(jobId);
+    private Job resolveJob(User user, String jobId) {
+        if (jobId != null && !jobId.isBlank()) {
+            Job candidate = jobService.getJobByPublicId(jobId);
             if (candidate != null && candidate.getUser() != null
                     && user.getId().equals(candidate.getUser().getId())) {
                 return candidate;

@@ -95,7 +95,7 @@ public class ColabInferenceService {
         }
 
         String boundary = "----splitnorder" + UUID.randomUUID();
-        String remoteJobId = "job-" + job.getId();
+        String remoteJobId = "job-" + job.getPublicId();
 
         URL url = new URL(colabApiUrl + "/api/separate");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -144,7 +144,7 @@ public class ColabInferenceService {
      * ile türetilir (uzantı .mp3 → .wav).
      */
     private void downloadStems(Job job, String remoteJobId) throws IOException {
-        Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId())).toAbsolutePath();
+        Path stemsDir = Paths.get(stemsDirectory, job.getPublicId()).toAbsolutePath();
         Files.createDirectories(stemsDir);
 
         for (String stemType : STEMS) {
@@ -170,7 +170,7 @@ public class ColabInferenceService {
     }
 
     private void createStemRecords(Job job) throws IOException {
-        Path stemsDir = Paths.get(stemsDirectory, String.valueOf(job.getId())).toAbsolutePath();
+        Path stemsDir = Paths.get(stemsDirectory, job.getPublicId()).toAbsolutePath();
         Files.createDirectories(stemsDir);
         for (String stemType : STEMS) {
             Path file = stemsDir.resolve(stemType + ".mp3");
@@ -179,7 +179,7 @@ public class ColabInferenceService {
             stem.setStemType(stemType);
             stem.setFilePath(file.toString());
             stem.setFileSize(file.toFile().exists() ? file.toFile().length() : 0L);
-            stem.setDownloadUrl("/job/" + job.getId() + "/download/" + stemType);
+            stem.setDownloadUrl("/job/" + job.getPublicId() + "/download/" + stemType);
             stemDao.save(stem);
             job.getStems().add(stem);
         }

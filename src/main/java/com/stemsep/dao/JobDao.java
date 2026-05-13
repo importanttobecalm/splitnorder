@@ -32,6 +32,15 @@ public class JobDao {
         return getCurrentSession().get(Job.class, id);
     }
 
+    public Job findByPublicId(String publicId) {
+        Session session = getCurrentSession();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<Job> cq = cb.createQuery(Job.class);
+        Root<Job> root = cq.from(Job.class);
+        cq.select(root).where(cb.equal(root.get("publicId"), publicId));
+        return session.createQuery(cq).uniqueResult();
+    }
+
     public void update(Job job) {
         getCurrentSession().merge(job);
     }
