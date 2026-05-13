@@ -2,7 +2,12 @@
 name: Changelog
 description: Anlamlı değişikliklerin tarihli listesi (en yeni üstte)
 type: project
-updated: 2026-05-12
+updated: 2026-05-13
+
+## 2026-05-13
+- fix(auth): Login/register hata mapping'i explicit exception-per-catch'e çevrildi (eski kod tüm RuntimeException'ı sabit "INVALID_CREDENTIALS"a indirgiyordu, ayrıca Turkish locale `.toUpperCase()` "USERNAMEEXİSTS" üretiyordu). `auth.error.INVALID_CREDENTIALS` ve `INTERNAL_ERROR` key'leri TR+EN'e eklendi; duplicate `auth.error.usernameExists` (camelCase) ve kullanılmayan `auth.error.INVALID_PASSWORD` temizlendi. AuthController.java + messages_*_*.properties
+- test(auth): Yeni testler — AuthServiceTest (8), AuthControllerTest (7), UserDaoTest Criteria zinciri (4 yeni), I18nKeyContractTest (3). Toplam 27 yeni assertion, ders gereksinim dokümanındaki "açıklamalı birim testler" maddesini auth akışı için karşılar.
+- gotcha(hibernate6): `Session.getCriteriaBuilder()` artık `HibernateCriteriaBuilder` döndürüyor (Hibernate 6 covariant return); Mockito stub'ında jakarta.persistence.criteria.* yerine org.hibernate.query.criteria.Jpa* tiplerini kullanmak ZORUNLU.
 ---
 
 ## 2026-05-12

@@ -1,5 +1,9 @@
 package com.stemsep.controller;
 
+import com.stemsep.exception.EmailExistsException;
+import com.stemsep.exception.EmailNotVerifiedException;
+import com.stemsep.exception.InvalidCredentialsException;
+import com.stemsep.exception.UsernameExistsException;
 import com.stemsep.model.User;
 import com.stemsep.service.AuthService;
 import org.slf4j.Logger;
@@ -39,9 +43,19 @@ public class AuthController {
             User user = authService.loginLocal(email.trim().toLowerCase(), password);
             session.setAttribute("user", user);
             return "redirect:/";
-        } catch (RuntimeException e) {
-            logger.warn("Login başarısız: email={}, error={}", email, e.getClass().getSimpleName());
+        } catch (InvalidCredentialsException e) {
+            logger.warn("Login başarısız (geçersiz kimlik): email={}", email);
             model.addAttribute("error", "INVALID_CREDENTIALS");
+            model.addAttribute("email", email);
+            return "auth/login";
+        } catch (EmailNotVerifiedException e) {
+            logger.warn("Login başarısız (email doğrulanmamış): email={}", email);
+            model.addAttribute("error", "EMAIL_NOT_VERIFIED");
+            model.addAttribute("email", email);
+            return "auth/login";
+        } catch (RuntimeException e) {
+            logger.error("Login sırasında beklenmedik hata: email={}", email, e);
+            model.addAttribute("error", "INTERNAL_ERROR");
             model.addAttribute("email", email);
             return "auth/login";
         }
@@ -56,10 +70,21 @@ public class AuthController {
         try {
             authService.registerLocal(username.trim(), email.trim().toLowerCase(), password, lang);
             return "redirect:/auth/login?message=REGISTRATION_SUCCESS";
+        } catch (UsernameExistsException e) {
+            logger.warn("Kayıt başarısız (kullanıcı adı dolu): username={}", username);
+            model.addAttribute("error", "USERNAME_EXISTS");
+            model.addAttribute("username", username);
+            model.addAttribute("email", email);
+            return "auth/register";
+        } catch (EmailExistsException e) {
+            logger.warn("Kayıt başarısız (email dolu): email={}", email);
+            model.addAttribute("error", "EMAIL_EXISTS");
+            model.addAttribute("username", username);
+            model.addAttribute("email", email);
+            return "auth/register";
         } catch (RuntimeException e) {
-            logger.warn("Kayıt başarısız: email={}, error={}", email, e.getClass().getSimpleName());
-            String code = e.getClass().getSimpleName().replace("Exception", "").toUpperCase();
-            model.addAttribute("error", code);
+            logger.error("Register sırasında beklenmedik hata: email={}", email, e);
+            model.addAttribute("error", "INTERNAL_ERROR");
             model.addAttribute("username", username);
             model.addAttribute("email", email);
             return "auth/register";

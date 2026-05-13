@@ -3,13 +3,23 @@ package com.stemsep.dao;
 import com.stemsep.model.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaCriteriaQuery;
+import org.hibernate.query.criteria.JpaPredicate;
+import org.hibernate.query.criteria.JpaPath;
+import org.hibernate.query.criteria.JpaRoot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Collections;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -126,5 +136,95 @@ public class UserDaoTest {
         userDao.delete(user);
 
         verify(session).remove(user);
+    }
+
+    // ============================================================
+    // Criteria sorgu testleri (findByEmail / findByUsername)
+    // ------------------------------------------------------------
+    // Bu testler Hibernate Criteria zincirini (CriteriaBuilder →
+    // CriteriaQuery → Root → Query) tam olarak mock'lar. Yöntem:
+    // gerçek bir DB sorgusu yapmadan, DAO'nun beklenen Criteria
+    // çağrılarını ürettiğini ve sonuç listesinin doğru şekilde
+    // tek User / null'a indirildiğini doğrularız.
+    // ============================================================
+
+    /**
+     * Criteria sorgusu için tam mock zincirini hazırlayıp Query'yi döndürür.
+     * Generic uyarılarını lokalize etmek için bu yardımcıyı kullanıyoruz.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Query<User> stubCriteriaQuery() {
+        HibernateCriteriaBuilder cb = mock(HibernateCriteriaBuilder.class);
+        JpaCriteriaQuery<User> cq = mock(JpaCriteriaQuery.class);
+        JpaRoot<User> root = mock(JpaRoot.class);
+        JpaPath path = mock(JpaPath.class);
+        JpaPredicate predicate = mock(JpaPredicate.class);
+        Query<User> query = mock(Query.class);
+
+        when(session.getCriteriaBuilder()).thenReturn(cb);
+        when(cb.createQuery(User.class)).thenReturn(cq);
+        when(cq.from(User.class)).thenReturn(root);
+        when(cq.select(root)).thenReturn(cq);
+        when(root.get(anyString())).thenReturn(path);
+        when(cb.equal(any(), any())).thenReturn(predicate);
+        when(cq.where(predicate)).thenReturn(cq);
+        when(session.createQuery(cq)).thenReturn(query);
+        return query;
+    }
+
+    /**
+     * {@code findByEmail()} — kayıt varsa o User döner. Criteria sorgusu
+     * tek elemanlı liste döndürdüğünde DAO ilk elemanı verir.
+     */
+    @Test
+    public void findByEmail_existingEmail_returnsUser() {
+        User user = new User();
+        user.setEmail("a@b.com");
+        Query<User> query = stubCriteriaQuery();
+        when(query.getResultList()).thenReturn(List.of(user));
+
+        User result = userDao.findByEmail("a@b.com");
+
+        assertNotNull(result);
+        assertEquals("a@b.com", result.getEmail());
+    }
+
+    /**
+     * {@code findByEmail()} — kayıt yoksa Criteria boş liste döndürür,
+     * DAO {@code null} döndürmelidir (null-safe contract).
+     */
+    @Test
+    public void findByEmail_nonexistentEmail_returnsNull() {
+        Query<User> query = stubCriteriaQuery();
+        when(query.getResultList()).thenReturn(Collections.emptyList());
+
+        assertNull(userDao.findByEmail("ghost@b.com"));
+    }
+
+    /**
+     * {@code findByUsername()} — kayıt varsa User döner.
+     */
+    @Test
+    public void findByUsername_existingUsername_returnsUser() {
+        User user = new User();
+        user.setUsername("alice");
+        Query<User> query = stubCriteriaQuery();
+        when(query.getResultList()).thenReturn(List.of(user));
+
+        User result = userDao.findByUsername("alice");
+
+        assertNotNull(result);
+        assertEquals("alice", result.getUsername());
+    }
+
+    /**
+     * {@code findByUsername()} — kayıt yoksa null.
+     */
+    @Test
+    public void findByUsername_nonexistentUsername_returnsNull() {
+        Query<User> query = stubCriteriaQuery();
+        when(query.getResultList()).thenReturn(Collections.emptyList());
+
+        assertNull(userDao.findByUsername("ghost"));
     }
 }

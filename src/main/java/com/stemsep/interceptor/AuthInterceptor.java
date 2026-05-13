@@ -12,7 +12,10 @@ public class AuthInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         String ctx = request.getContextPath();
 
-        if (path.startsWith(ctx + "/static/")
+        // "/" landing açılış sayfasıdır; HomeController anonim ziyaretçiyi
+        // /landing.html (static) sayfasına forward eder.
+        if (path.equals(ctx + "/") || path.equals(ctx)
+                || path.startsWith(ctx + "/static/")
                 || path.startsWith(ctx + "/auth/")
                 || path.startsWith(ctx + "/api/auth/")) {
             return true;

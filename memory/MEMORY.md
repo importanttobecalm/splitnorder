@@ -10,3 +10,7 @@
 - [NotebookLM MCP](reference_notebooklm.md) — Ders PDF'lerine sorgu erişimi (alias: bm470)
 - 🔒 [NotebookLM-First Kuralı](feedback_notebooklm_first.md) — Kod yazmadan ÖNCE bm470 sorgula (ZORUNLU)
 - 📊 [Slayt Uyum Analizi 2026-05-12](project_slayt_uyum_analizi.md) — Slayt-dışı tespit edilen alanlar + aksiyon listesi
+- 🌐 [Playwright + Chrome Profil](reference_playwright_chrome.md) — Playwright MCP gerçek Chrome profilini kullanıyor, Grok/Gmail/Twitter login otomatik
+- 🤖 [Grok UI Otomasyon Tarifi](reference_grok_recipe.md) — testid'ler, cevap konumu, tuzaklar — snapshot keşfini atlamak için
+- ⚙️ [Build Gotcha — JAVA_HOME 21](gotchas_build_java25.md) — Homebrew Java 25 + Lombok 1.18.42 patlıyor, build için Java 21 zorunlu
+- 🧪 [Hibernate 6 Criteria Mock Gotcha](gotchas_hibernate6_criteria_mock.md) — Mockito stub'larında jakarta.persistence.criteria.* yerine org.hibernate.query.criteria.Jpa* tipleri

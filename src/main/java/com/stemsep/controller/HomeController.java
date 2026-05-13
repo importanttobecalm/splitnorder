@@ -1,5 +1,6 @@
 package com.stemsep.controller;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -7,7 +8,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HomeController {
 
     @GetMapping("/")
-    public String home() {
-        return "home";
+    public String home(HttpSession session) {
+        if (session.getAttribute("user") != null) {
+            return "home";
+        }
+        // Anonim ziyaretçi: animasyonlu landing HTML (static asset, JSP değil)
+        return "forward:/static/landing.html";
     }
 }
