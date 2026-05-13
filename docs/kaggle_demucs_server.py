@@ -1,40 +1,41 @@
 """
-Splitnorder · Kaggle Demucs API (dual format — WAV master + MP3 derived)
-=========================================================================
+Splitnorder · Kaggle Demucs API (Cloudflare Tunnel — ephemeral)
+================================================================
+
+Tunnel: cloudflared `tunnel --url http://localhost:8000` ile her Kaggle
+session'da yeni `https://xxx-yyy-zzz.trycloudflare.com` URL'i alır.
+Hesap, kayıt veya domain GEREKMİYOR — sınırsız bandwidth ücretsiz.
 
 İki format üretir:
-  - WAV: Demucs'ın doğal çıktısı (kayıpsız, profesyonel, ~40 MB/stem)
+  - WAV: Demucs'ın doğal çıktısı (~40 MB/stem)
   - MP3: ffmpeg ile 192 kbps türev (~4 MB/stem)
 
-Java tarayıcıya stream ederken MP3 kullanır (hızlı), kullanıcı "WAV indir"
-seçerse ZIP'e WAV girer.
+Java'ya URL inject etmek için (her Kaggle restart'ında):
+
+    ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 \\
+      '/home/ubuntu/splitnorder-demo/set-gpu-url.sh https://xxx.trycloudflare.com'
 
 Kaggle session yenilenince bağımlılıklar gider — aşağıdaki !pip satırı
 Jupyter `!` magic'i ile çalışır, pip zaten yüklüyse sessizce skip eder.
 (ffmpeg Kaggle ortamında zaten yüklü, ek pip gerekmiyor)
 """
 
-# Bağımlılıklar — Jupyter hücresinde `!` magic, zarar vermez
-!pip install -q pyngrok fastapi "uvicorn[standard]" nest_asyncio python-multipart demucs
+# Bağımlılıklar — pyngrok artık YOK, cloudflared subprocess olarak çalışır
+!pip install -q fastapi "uvicorn[standard]" nest_asyncio python-multipart demucs
 
-from pyngrok import ngrok, conf
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import FileResponse, JSONResponse
-import uvicorn, nest_asyncio, subprocess, os, shutil
+import os, re, shutil, subprocess, time
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 
-# ngrok auth
-conf.get_default().auth_token = "3DP4QTvoSpRXS8xbbf49vwds6c2_2SRfb7tpw969ErUkbrsE"
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import FileResponse, JSONResponse
+import uvicorn, nest_asyncio
 
 app = FastAPI()
 os.makedirs("/kaggle/working/uploads", exist_ok=True)
 os.makedirs("/kaggle/working/output", exist_ok=True)
 
-# Job durumlarını tutan basit dict
-JOBS = {}
-
-# Demucs'ın çıkardığı 4 stem ismi
+JOBS = {}  # job_id -> {status, progress, message, base}
 STEMS = ["vocals", "drums", "bass", "other"]
 
 
@@ -45,7 +46,6 @@ def health():
 
 
 def convert_to_mp3(wav_path: str, mp3_path: str) -> None:
-    """ffmpeg ile WAV → MP3 (192 kbps) dönüşümü, hızlı + yüksek kalite."""
     subprocess.run(
         [
             "ffmpeg", "-y", "-i", wav_path,
@@ -69,14 +69,13 @@ async def separate(
     jid = job_id or os.path.splitext(file.filename)[0]
     JOBS[jid] = {"status": "processing", "progress": 10, "message": "started"}
 
-    # Dosyayı kaydet
     input_path = f"/kaggle/working/uploads/{file.filename}"
     with open(input_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     JOBS[jid] = {"status": "processing", "progress": 30, "message": "running demucs (wav)"}
 
-    # 1) Demucs çalıştır — WAV (default)
+    # 1) Demucs çalıştır — WAV
     try:
         subprocess.run(
             ["demucs", "-o", "/kaggle/working/output", input_path],
@@ -91,7 +90,7 @@ async def separate(
 
     JOBS[jid] = {"status": "processing", "progress": 75, "message": "converting to mp3"}
 
-    # 2) ffmpeg ile her stem için MP3 türev üret — 4 dönüşüm paralel
+    # 2) ffmpeg ile 4 stem için MP3 üret (paralel)
     try:
         with ThreadPoolExecutor(max_workers=4) as pool:
             futures = []
@@ -111,7 +110,6 @@ async def separate(
         "message": "done",
         "base": base,
     }
-
     return {"status": "completed", "job_id": jid, "base": base}
 
 
@@ -129,11 +127,6 @@ def job_status(job_id: str):
 
 @app.get("/api/stem/{job_id}/{stem_type}")
 def get_stem(job_id: str, stem_type: str, fmt: str = "mp3"):
-    """
-    Stem dosyasını döndürür.
-      fmt=mp3 (default) → küçük, hızlı, tarayıcı streaming için
-      fmt=wav           → kayıpsız master, indirme için
-    """
     stem_clean = stem_type.replace(".wav", "").replace(".mp3", "")
     if fmt not in ("mp3", "wav"):
         fmt = "mp3"
@@ -155,9 +148,63 @@ def get_stem(job_id: str, stem_type: str, fmt: str = "mp3"):
     )
 
 
-# Static domain
-public_url = ngrok.connect(8000, domain="approval-licking-thread.ngrok-free.dev")
-print(f"🌍 PUBLIC URL: {public_url}")
+# ───── Cloudflare Tunnel (ephemeral, kayıtsız) ─────
+# 1) cloudflared binary'sini indir (Kaggle x86_64)
+CLOUDFLARED_BIN = "/kaggle/working/cloudflared"
+if not os.path.exists(CLOUDFLARED_BIN):
+    print("⬇️  cloudflared indiriliyor...")
+    subprocess.run(
+        ["wget", "-q",
+         "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64",
+         "-O", CLOUDFLARED_BIN],
+        check=True,
+    )
+    subprocess.run(["chmod", "+x", CLOUDFLARED_BIN], check=True)
+    print("✅ cloudflared hazır")
 
+# 2) Uvicorn'u background'da başlat
 nest_asyncio.apply()
 Thread(target=lambda: uvicorn.run(app, host="0.0.0.0", port=8000)).start()
+time.sleep(2)  # uvicorn'un port'a bağlanmasına süre ver
+
+# 3) cloudflared ephemeral tunnel başlat — stdout'tan trycloudflare URL'sini yakala
+print("☁️  Cloudflare Tunnel başlatılıyor...")
+tunnel = subprocess.Popen(
+    [CLOUDFLARED_BIN, "tunnel", "--url", "http://localhost:8000",
+     "--no-autoupdate", "--metrics", "localhost:0"],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    text=True,
+    bufsize=1,
+)
+
+public_url = None
+deadline = time.time() + 45
+url_pattern = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
+while time.time() < deadline:
+    line = tunnel.stdout.readline()
+    if not line:
+        time.sleep(0.2)
+        continue
+    print(line, end="")
+    m = url_pattern.search(line)
+    if m:
+        public_url = m.group(0)
+        break
+
+if public_url:
+    print("\n" + "=" * 60)
+    print(f"🌍 PUBLIC URL: {public_url}")
+    print("=" * 60)
+    print("\nSunucudaki Java'ya inject etmek için:")
+    print(f"\n  ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 \\")
+    print(f"    '/home/ubuntu/splitnorder-demo/set-gpu-url.sh {public_url}'\n")
+else:
+    print("\n⚠️  Cloudflared URL 45 saniyede yakalanamadı.")
+    print("    Log çıktısına bakıp manuel URL'yi al + set-gpu-url.sh'a ver.")
+
+# Tunnel log'larını yutmaya devam et (notebook kapanmasın)
+def drain_logs():
+    for line in tunnel.stdout:
+        pass
+Thread(target=drain_logs, daemon=True).start()
