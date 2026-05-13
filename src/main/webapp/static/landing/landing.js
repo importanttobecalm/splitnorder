@@ -187,6 +187,16 @@ manifestoTl.to('.manifesto-content .closing', {
   ease: 'power2.out'
 }, morphParts.length);
 
+// Pin release'den hemen önce yazı yumuşak fade-out + hafifçe yukarı kayar.
+// Pin bittiğinde kullanıcı görünmez yazıyla doğal akışa geçer; "bir anda
+// kopma" hissi kaybolur, geçiş cinsi olur.
+manifestoTl.to('.manifesto-content', {
+  opacity: 0,
+  y: -60,
+  duration: 1.2,
+  ease: 'power2.in'
+}, morphParts.length + 0.6);
+
 // MOUSE PARALLAX
 const layers = {
   vokal: document.querySelector('.layer.vokal'),
