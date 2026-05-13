@@ -80,6 +80,7 @@
                    placeholder="ornek@mail.com"
                    class="block w-full pl-10 pr-3 py-3 border border-surface-dim rounded-[10px] bg-surface-container-lowest text-on-surface placeholder-outline-variant font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-shadow">
           </div>
+          <p id="email-error" class="mt-1 text-body-sm font-body-sm text-red-600 hidden"></p>
         </div>
 
         <div>
@@ -91,12 +92,14 @@
               <span class="material-symbols-outlined text-[20px]">lock</span>
             </div>
             <input id="password" name="password" type="password" required placeholder="••••••••"
-                   class="block w-full pl-10 pr-10 py-3 border border-surface-dim rounded-[10px] bg-surface-container-lowest text-on-surface placeholder-outline-variant font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-shadow">
+                   class="block w-full pl-10 pr-10 py-3 border border-surface-dim rounded-[10px] bg-surface-container-lowest text-on-surface placeholder-outline-variant font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-shadow"
+                   aria-describedby="password-error">
             <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-outline hover:text-on-surface transition-colors"
                  onclick="var p=document.getElementById('password'); p.type=p.type==='password'?'text':'password';">
               <span class="material-symbols-outlined text-[20px]">visibility</span>
             </div>
           </div>
+          <p id="password-error" class="mt-1 text-body-sm font-body-sm text-red-600 hidden"></p>
         </div>
 
         <div class="flex items-center justify-between">
@@ -149,4 +152,62 @@
   </div>
 </div>
 
+<script>
+(function () {
+  const i18n = {
+    emailRequired: "<fmt:message key='auth.validate.email_required'/>",
+    emailInvalid:  "<fmt:message key='auth.validate.email_invalid'/>",
+    pwRequired:    "<fmt:message key='auth.validate.password_required'/>",
+    pwShort:       "<fmt:message key='auth.validate.password_short'/>"
+  };
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const INVALID_CLS = ['border-red-500','ring-2','ring-red-500/30'];
+  const VALID_CLS   = ['border-green-500'];
+
+  function setState(input, errEl, msg) {
+    INVALID_CLS.forEach(c => input.classList.remove(c));
+    VALID_CLS.forEach(c => input.classList.remove(c));
+    if (msg) {
+      INVALID_CLS.forEach(c => input.classList.add(c));
+      errEl.textContent = msg;
+      errEl.classList.remove('hidden');
+      return false;
+    }
+    VALID_CLS.forEach(c => input.classList.add(c));
+    errEl.classList.add('hidden');
+    errEl.textContent = '';
+    return true;
+  }
+
+  const emailIn = document.getElementById('email');
+  const emailErr = document.getElementById('email-error');
+  const pwIn = document.getElementById('password');
+  const pwErr = document.getElementById('password-error');
+  const form = emailIn.closest('form');
+
+  function validateEmail(silent) {
+    const v = emailIn.value.trim();
+    if (!v) return setState(emailIn, emailErr, silent ? '' : i18n.emailRequired);
+    if (!EMAIL_RE.test(v)) return setState(emailIn, emailErr, i18n.emailInvalid);
+    return setState(emailIn, emailErr, '');
+  }
+  function validatePw(silent) {
+    const v = pwIn.value;
+    if (!v) return setState(pwIn, pwErr, silent ? '' : i18n.pwRequired);
+    if (v.length < 8) return setState(pwIn, pwErr, i18n.pwShort);
+    return setState(pwIn, pwErr, '');
+  }
+
+  emailIn.addEventListener('input', () => validateEmail(true));
+  emailIn.addEventListener('blur',  () => validateEmail(false));
+  pwIn.addEventListener('input', () => validatePw(true));
+  pwIn.addEventListener('blur',  () => validatePw(false));
+
+  form.addEventListener('submit', (e) => {
+    const ok1 = validateEmail(false);
+    const ok2 = validatePw(false);
+    if (!ok1 || !ok2) e.preventDefault();
+  });
+})();
+</script>
 <jsp:include page="/WEB-INF/views/layout/footer.jsp" />

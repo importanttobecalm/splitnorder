@@ -59,6 +59,7 @@
                    placeholder="yusufb"
                    class="w-full h-12 pl-10 pr-4 bg-surface rounded-[10px] border border-surface-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-body-md text-on-surface placeholder:text-outline-variant outline-none">
           </div>
+          <p id="username-error" class="mt-1 text-body-sm font-body-sm text-red-600 hidden"></p>
         </div>
 
         <%-- E-posta --%>
@@ -72,6 +73,7 @@
                    placeholder="ornek@mail.com"
                    class="w-full h-12 pl-10 pr-4 bg-surface rounded-[10px] border border-surface-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-body-md text-on-surface placeholder:text-outline-variant outline-none">
           </div>
+          <p id="email-error" class="mt-1 text-body-sm font-body-sm text-red-600 hidden"></p>
         </div>
 
         <%-- Parola --%>
@@ -89,6 +91,19 @@
               <span class="material-symbols-outlined">visibility</span>
             </button>
           </div>
+          <%-- Şifre güç göstergesi --%>
+          <div id="pw-strength-wrap" class="mt-2 hidden">
+            <div class="flex gap-1">
+              <span class="pw-bar h-1.5 flex-1 rounded bg-surface-variant"></span>
+              <span class="pw-bar h-1.5 flex-1 rounded bg-surface-variant"></span>
+              <span class="pw-bar h-1.5 flex-1 rounded bg-surface-variant"></span>
+              <span class="pw-bar h-1.5 flex-1 rounded bg-surface-variant"></span>
+            </div>
+            <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+              <fmt:message key="auth.validate.strength" />: <span id="pw-strength-label" class="font-medium"></span>
+            </p>
+          </div>
+          <p id="password-error" class="mt-1 text-body-sm font-body-sm text-red-600 hidden"></p>
         </div>
 
         <%-- Parola tekrar --%>
@@ -101,6 +116,7 @@
             <input id="password_confirm" name="password_confirm" type="password" required
                    class="w-full h-12 pl-10 pr-4 bg-surface rounded-[10px] border border-surface-variant focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-body-md text-on-surface placeholder:text-outline-variant outline-none">
           </div>
+          <p id="password_confirm-error" class="mt-1 text-body-sm font-body-sm text-red-600 hidden"></p>
         </div>
 
         <%-- Şartlar checkbox --%>
@@ -144,4 +160,127 @@
   </div>
 </div>
 
+<script>
+(function () {
+  const i18n = {
+    usernameRequired: "<fmt:message key='auth.validate.username_required'/>",
+    usernameShort:    "<fmt:message key='auth.validate.username_short'/>",
+    emailRequired:    "<fmt:message key='auth.validate.email_required'/>",
+    emailInvalid:     "<fmt:message key='auth.validate.email_invalid'/>",
+    pwRequired:       "<fmt:message key='auth.validate.password_required'/>",
+    pwShort:          "<fmt:message key='auth.validate.password_short'/>",
+    pwUpper:          "<fmt:message key='auth.validate.password_upper'/>",
+    pwLower:          "<fmt:message key='auth.validate.password_lower'/>",
+    pwDigit:          "<fmt:message key='auth.validate.password_digit'/>",
+    pwMismatch:       "<fmt:message key='auth.validate.password_mismatch'/>",
+    sWeak:            "<fmt:message key='auth.validate.strength.weak'/>",
+    sMedium:          "<fmt:message key='auth.validate.strength.medium'/>",
+    sStrong:          "<fmt:message key='auth.validate.strength.strong'/>",
+    sVeryStrong:      "<fmt:message key='auth.validate.strength.very_strong'/>"
+  };
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const INVALID_CLS = ['border-red-500','ring-2','ring-red-500/30'];
+  const VALID_CLS   = ['border-green-500'];
+
+  function setState(input, errEl, msg) {
+    INVALID_CLS.forEach(c => input.classList.remove(c));
+    VALID_CLS.forEach(c => input.classList.remove(c));
+    if (msg) {
+      INVALID_CLS.forEach(c => input.classList.add(c));
+      errEl.textContent = msg;
+      errEl.classList.remove('hidden');
+      return false;
+    }
+    VALID_CLS.forEach(c => input.classList.add(c));
+    errEl.classList.add('hidden');
+    errEl.textContent = '';
+    return true;
+  }
+
+  const usernameIn = document.getElementById('username');
+  const usernameErr = document.getElementById('username-error');
+  const emailIn = document.getElementById('email');
+  const emailErr = document.getElementById('email-error');
+  const pwIn = document.getElementById('password');
+  const pwErr = document.getElementById('password-error');
+  const pwcIn = document.getElementById('password_confirm');
+  const pwcErr = document.getElementById('password_confirm-error');
+  const strengthWrap = document.getElementById('pw-strength-wrap');
+  const strengthBars = strengthWrap.querySelectorAll('.pw-bar');
+  const strengthLabel = document.getElementById('pw-strength-label');
+  const form = usernameIn.closest('form');
+
+  function validateUsername(silent) {
+    const v = usernameIn.value.trim();
+    if (!v) return setState(usernameIn, usernameErr, silent ? '' : i18n.usernameRequired);
+    if (v.length < 3) return setState(usernameIn, usernameErr, i18n.usernameShort);
+    return setState(usernameIn, usernameErr, '');
+  }
+  function validateEmail(silent) {
+    const v = emailIn.value.trim();
+    if (!v) return setState(emailIn, emailErr, silent ? '' : i18n.emailRequired);
+    if (!EMAIL_RE.test(v)) return setState(emailIn, emailErr, i18n.emailInvalid);
+    return setState(emailIn, emailErr, '');
+  }
+  function pwIssues(v) {
+    const issues = [];
+    if (v.length < 8) issues.push(i18n.pwShort);
+    if (!/[A-Z]/.test(v)) issues.push(i18n.pwUpper);
+    if (!/[a-z]/.test(v)) issues.push(i18n.pwLower);
+    if (!/[0-9]/.test(v)) issues.push(i18n.pwDigit);
+    return issues;
+  }
+  function pwScore(v) {
+    let s = 0;
+    if (v.length >= 8)  s++;
+    if (v.length >= 12) s++;
+    if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+    if (/[0-9]/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    return Math.min(s, 4);
+  }
+  function renderStrength(v) {
+    if (!v) { strengthWrap.classList.add('hidden'); return; }
+    strengthWrap.classList.remove('hidden');
+    const score = pwScore(v);
+    const colors = ['bg-red-500','bg-orange-500','bg-yellow-500','bg-green-500'];
+    const labels = [i18n.sWeak, i18n.sWeak, i18n.sMedium, i18n.sStrong, i18n.sVeryStrong];
+    strengthBars.forEach((b, i) => {
+      b.classList.remove('bg-surface-variant','bg-red-500','bg-orange-500','bg-yellow-500','bg-green-500');
+      if (i < score) b.classList.add(colors[Math.max(0, score - 1)]);
+      else b.classList.add('bg-surface-variant');
+    });
+    strengthLabel.textContent = labels[score] || i18n.sWeak;
+  }
+  function validatePw(silent) {
+    const v = pwIn.value;
+    renderStrength(v);
+    if (!v) return setState(pwIn, pwErr, silent ? '' : i18n.pwRequired);
+    const issues = pwIssues(v);
+    if (issues.length) return setState(pwIn, pwErr, issues[0]);
+    return setState(pwIn, pwErr, '');
+  }
+  function validatePwc(silent) {
+    const v = pwcIn.value;
+    if (!v) return setState(pwcIn, pwcErr, silent ? '' : i18n.pwRequired);
+    if (v !== pwIn.value) return setState(pwcIn, pwcErr, i18n.pwMismatch);
+    return setState(pwcIn, pwcErr, '');
+  }
+
+  usernameIn.addEventListener('input', () => validateUsername(true));
+  usernameIn.addEventListener('blur',  () => validateUsername(false));
+  emailIn.addEventListener('input', () => validateEmail(true));
+  emailIn.addEventListener('blur',  () => validateEmail(false));
+  pwIn.addEventListener('input', () => { validatePw(true); if (pwcIn.value) validatePwc(true); });
+  pwIn.addEventListener('blur',  () => validatePw(false));
+  pwcIn.addEventListener('input', () => validatePwc(true));
+  pwcIn.addEventListener('blur',  () => validatePwc(false));
+
+  form.addEventListener('submit', (e) => {
+    const ok = [validateUsername(false), validateEmail(false), validatePw(false), validatePwc(false)]
+      .every(Boolean);
+    if (!ok) e.preventDefault();
+  });
+})();
+</script>
 <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
