@@ -1,29 +1,6 @@
-"""
-Splitnorder · Kaggle Demucs API (Cloudflare Tunnel — ephemeral)
-================================================================
-
-Tunnel: cloudflared `tunnel --url http://localhost:8000` ile her Kaggle
-session'da yeni `https://xxx-yyy-zzz.trycloudflare.com` URL'i alır.
-Hesap, kayıt veya domain GEREKMİYOR — sınırsız bandwidth ücretsiz.
-
-İki format üretir:
-  - WAV: Demucs'ın doğal çıktısı (~40 MB/stem)
-  - MP3: ffmpeg ile 192 kbps türev (~4 MB/stem)
-
-Java'ya URL inject etmek için (her Kaggle restart'ında):
-
-    ssh -i ~/Desktop/ssh-key-2026-02-24.key ubuntu@130.61.66.0 \\
-      '/home/ubuntu/splitnorder-demo/set-gpu-url.sh https://xxx.trycloudflare.com'
-
-Kaggle session yenilenince bağımlılıklar gider — aşağıdaki !pip satırı
-Jupyter `!` magic'i ile çalışır, pip zaten yüklüyse sessizce skip eder.
-(ffmpeg Kaggle ortamında zaten yüklü, ek pip gerekmiyor)
-"""
-
 # Bağımlılıklar — pyngrok artık YOK, cloudflared subprocess olarak çalışır
-!pip install -q fastapi "uvicorn[standard]" nest_asyncio python-multipart demucs
 
-import os, re, shutil, subprocess, time
+import os, re, shutil, subprocess, time, threading
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 
@@ -159,13 +136,23 @@ if not os.path.exists(CLOUDFLARED_BIN):
          "-O", CLOUDFLARED_BIN],
         check=True,
     )
-    subprocess.run(["chmod", "+x", CLOUDFLARED_BIN], check=True)
-    print("✅ cloudflared hazır")
+    print("✅ cloudflared indirildi")
 
-# 2) Uvicorn'u background'da başlat
+# chmod'u her run'da garantile (yarım kalan indirme / exec biti yoksa düzeltir)
+os.chmod(CLOUDFLARED_BIN, 0o755)
+
+# 2) Uvicorn'u background'da başlat — sadece bir kez (hücre tekrar çalışırsa port çakışmasın)
 nest_asyncio.apply()
-Thread(target=lambda: uvicorn.run(app, host="0.0.0.0", port=8000)).start()
-time.sleep(2)  # uvicorn'un port'a bağlanmasına süre ver
+UVICORN_THREAD_NAME = "uvicorn-thread"
+if not any(t.name == UVICORN_THREAD_NAME for t in threading.enumerate()):
+    Thread(
+        target=lambda: uvicorn.run(app, host="0.0.0.0", port=8000),
+        name=UVICORN_THREAD_NAME,
+        daemon=True,
+    ).start()
+    time.sleep(2)  # uvicorn'un port'a bağlanmasına süre ver
+else:
+    print("ℹ️  uvicorn zaten çalışıyor, yeni thread başlatılmadı")
 
 # 3) cloudflared ephemeral tunnel başlat — stdout'tan trycloudflare URL'sini yakala
 print("☁️  Cloudflare Tunnel başlatılıyor...")

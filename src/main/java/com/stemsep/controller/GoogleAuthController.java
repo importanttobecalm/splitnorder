@@ -112,9 +112,16 @@ public class GoogleAuthController {
         try (OutputStream os = conn.getOutputStream()) {
             os.write(params.getBytes(StandardCharsets.UTF_8));
         }
-        try (Scanner s = new Scanner(conn.getInputStream(), StandardCharsets.UTF_8)) {
+        int status = conn.getResponseCode();
+        java.io.InputStream stream = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
+        try (Scanner s = new Scanner(stream, StandardCharsets.UTF_8)) {
             s.useDelimiter("\\A");
-            return s.hasNext() ? s.next() : "";
+            String body = s.hasNext() ? s.next() : "";
+            if (status < 200 || status >= 300) {
+                logger.error("Google token endpoint HTTP {} — body: {}", status, body);
+                throw new IOException("Google token endpoint HTTP " + status + ": " + body);
+            }
+            return body;
         }
     }
 

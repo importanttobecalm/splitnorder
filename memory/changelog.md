@@ -5,7 +5,14 @@ type: project
 updated: 2026-05-13
 ---
 
+## 2026-05-14
+- fix(auth): Google OAuth callback'te username unique constraint çakışması 500'e neden oluyordu. Yusuf farklı Google hesabıyla giriş denedi, profil adı zaten DB'de mevcut (id=2, mevol.two@gmail.com) → `Duplicate entry 'Yusuf BULUT'`. Çözüm: `AuthService.loginOrRegisterGoogle` içinde yeni user oluşturmadan önce `generateUniqueUsername(base)` ile çakışma kontrolü + sonek ekleme (base, base2, base3, ..., fallback UUID prefix). Username unique constraint korundu (local login findByUsername üzerinden çalışıyor). Build + scp + restart yapıldı.
+
 ## 2026-05-13
+- chore(ops): vespay'e Adminer (`127.0.0.1:8090`) + Filebrowser (`127.0.0.1:8091`, `/home/ubuntu/splitnorder-demo` read-only) eklendi — sadece localhost'a bind, SSH tünelden erişim. docker-compose.yml güncellendi (yedek: `.bak`). Erişim: `ssh -L 8090:127.0.0.1:8090 -L 8091:127.0.0.1:8091 ubuntu@130.61.66.0` → tarayıcıdan `localhost:8090` (Adminer, MySQL→splitnorder-mysql/stemsep) ve `localhost:8091` (Filebrowser, ilk login admin/admin). Public yok.
+- chore(db): vespay `splitnorder-mysql` canlı DB lokale dump edildi (`mysqldump --single-transaction` SSH üzerinden) → `splitnorder-mysql-local` (mysql:8.0, host port 3307). İçerik: users=4, jobs=3, stems=12. Dump: `/tmp/stemsep_db_dump.sql` (8.2 KB).
+- feat(error): Tomcat default error page'leri kaldırıldı. Sorun: GlobalExceptionHandler sadece DispatcherServlet'ten geçen hataları yakalıyordu — static 404, 405, 413, JSP render hatası Tomcat'e düşüyordu. Çözüm: minimal `web.xml` (sadece `<error-page>` mapping için, bootstrap hala WebAppInitializer'da — ADR-04 ihlali değil), `ErrorController` (`/error/show/{code}` → 404.jsp/500.jsp), GlobalExceptionHandler'a `MaxUploadSizeExceededException`/`HttpRequestMethodNotSupportedException`/`AppException` (dinamik status). Canlı doğrulama: `/yok` → 404 custom, `DELETE /` → 405 custom, 60MB upload → 413 custom. commit 851a67c.
+- feat(landing): sağ üste pill şeklinde "Giriş Yap" butonu (`/auth/login` → cam efektli). landing.html + landing.css. commit 8e07079.
 - feat(auth): login/register formlarına gerçek zamanlı doğrulama eklendi. E-posta regex + parola kuralları (8 char + upper/lower/digit) + parola tekrar eşleşmesi. Register'a 4-segment güç göstergesi. Hatalar kırmızı border + alt yazı. i18n: `auth.validate.*` (TR/EN). Dosyalar: `views/auth/login.jsp`, `views/auth/register.jsp`, `messages_tr_TR.properties`, `messages_en_US.properties`. (commit c2d3649)
 
 ## 2026-05-13

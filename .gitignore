@@ -79,3 +79,6 @@ client_secret_*.json
 /showcase-hero.png
 /sablon.docx
 
+# Secrets — DB password / SSH key paths
+REMOTE_ACCESS.md
+

@@ -101,7 +101,7 @@ public class AuthService {
         }
 
         user = new User();
-        user.setUsername(name);
+        user.setUsername(generateUniqueUsername(name));
         user.setEmail(email);
         user.setGoogleId(googleId);
         user.setAuthProvider("GOOGLE");
@@ -110,6 +110,19 @@ public class AuthService {
         userDao.save(user);
         logger.info("Yeni Google kullanıcısı kaydedildi: googleId={}, email={}", googleId, email);
         return user;
+    }
+
+    private String generateUniqueUsername(String base) {
+        if (userDao.findByUsername(base) == null) {
+            return base;
+        }
+        for (int i = 2; i < 1000; i++) {
+            String candidate = base + i;
+            if (userDao.findByUsername(candidate) == null) {
+                return candidate;
+            }
+        }
+        return base + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
 
     @Transactional
