@@ -2,8 +2,12 @@
 name: Changelog
 description: Anlamlı değişikliklerin tarihli listesi (en yeni üstte)
 type: project
-updated: 2026-05-13
+updated: 2026-05-16
 ---
+
+## 2026-05-16
+- chore(backup): repo Muyubu1/splitnorder (private) remote olarak eklendi (`muyubu`) — tüm branch'ler push edildi. Origin (importanttobecalm) public kalıyor; Muyubu1 kişisel yedek.
+- security(repo): REMOTE_ACCESS.md `.gitignore`'a alındı (DB şifresi + sunucu IP içeriyordu). Yerel yedek: `~/Documents/splitnorder-secrets/REMOTE_ACCESS.md`.
 
 ## 2026-05-14
 - fix(auth): Google OAuth callback'te username unique constraint çakışması 500'e neden oluyordu. Yusuf farklı Google hesabıyla giriş denedi, profil adı zaten DB'de mevcut (id=2, mevol.two@gmail.com) → `Duplicate entry 'Yusuf BULUT'`. Çözüm: `AuthService.loginOrRegisterGoogle` içinde yeni user oluşturmadan önce `generateUniqueUsername(base)` ile çakışma kontrolü + sonek ekleme (base, base2, base3, ..., fallback UUID prefix). Username unique constraint korundu (local login findByUsername üzerinden çalışıyor). Build + scp + restart yapıldı.
