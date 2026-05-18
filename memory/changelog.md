@@ -2,8 +2,11 @@
 name: Changelog
 description: Anlamlı değişikliklerin tarihli listesi (en yeni üstte)
 type: project
-updated: 2026-05-16
+updated: 2026-05-18
 ---
+
+## 2026-05-18
+- chore(server): vespay sunucusundaki splitnorder demo TAMAMEN temizlendi. Silinenler: 4 container (tomcat/mysql/adminer/filebrowser), 5 volume (~591 MB — DB + uploads + stems dahil), 2 network, 4 docker image (~1.5 GB), `/home/ubuntu/splitnorder-demo` dizini (42 MB), Caddyfile'daki splitnorder bloğu (satır 58-66), Caddy data volume'undaki 2 TLS sertifika dizini. Caddyfile yedeği: `/home/ubuntu/n8n-merkezi/Caddyfile.bak-20260518-103512`. vespay.com.tr ve n8n.harliftasansor.xyz 200 dönüyor — etkilenmedi. Kalan manuel iş: GoDaddy A kaydı (splitnorder.space @ + www → 130.61.66.0) silinmeli.
 
 ## 2026-05-16
 - chore(backup): repo Muyubu1/splitnorder (private) remote olarak eklendi (`muyubu`) — tüm branch'ler push edildi. Origin (importanttobecalm) public kalıyor; Muyubu1 kişisel yedek.
