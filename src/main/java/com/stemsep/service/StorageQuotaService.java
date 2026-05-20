@@ -1,6 +1,7 @@
 package com.stemsep.service;
 
 import com.stemsep.dao.JobDao;
+import com.stemsep.dao.MixedTrackDao;
 import com.stemsep.dao.StemDao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,11 +19,15 @@ public class StorageQuotaService {
     @Autowired
     private StemDao stemDao;
 
+    @Autowired
+    private MixedTrackDao mixedTrackDao;
+
     @Transactional(readOnly = true)
     public long getUsedBytes(Long userId) {
         long original = jobDao.sumOriginalFileSizeByUserId(userId);
         long stems = stemDao.sumFileSizeByUserId(userId);
-        return original + stems;
+        long mixes = mixedTrackDao.sumFileSizeByUserId(userId);
+        return original + stems + mixes;
     }
 
     @Transactional(readOnly = true)

@@ -1,6 +1,7 @@
 package com.stemsep.service;
 
 import com.stemsep.dao.JobDao;
+import com.stemsep.dao.MixedTrackDao;
 import com.stemsep.dao.StemDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,12 +36,16 @@ public class StorageQuotaServiceTest {
     @Mock
     private StemDao stemDao;
 
+    @Mock
+    private MixedTrackDao mixedTrackDao;
+
     @InjectMocks
     private StorageQuotaService service;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        when(mixedTrackDao.sumFileSizeByUserId(USER_ID)).thenReturn(0L);
     }
 
     /** Hiç dosya yoksa kullanım 0 olmalı (SUM NULL → DAO 0L döner). */

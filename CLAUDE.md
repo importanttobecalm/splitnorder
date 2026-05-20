@@ -37,6 +37,7 @@ Sıralı, hepsi kısa — toplam ~5 dakikalık warm-up:
 | 10 | **i18n** | TR + EN `messages_*.properties`, TR zorunlu | ✅ | [10](docs/decisions/10-i18n-yapisi.md) |
 | 11 | **View** | JSP + JSTL (`/WEB-INF/views/`), `jakarta.tags.core` namespace | ✅ | [11](docs/decisions/11-jsp-jstl.md) |
 | 12 | **Interceptor** | `RequestLoggingInterceptor` cross-cutting log için (proje gereksinimi) | ✅ | [12](docs/decisions/12-interceptor.md) |
+| 13 | **Depo & Mix** | 5 GB/user kota (CriteriaBuilder.sum) + manuel silme; karma mix Kaggle Flask `/api/mix`'te, ayrı `mixed_tracks` tablosu | ✅ Faz 1 / 🔧 Faz 2 | [13](docs/decisions/13-storage-mix.md) |
 
 **Statü:** ✅ Kabul / 🔧 Plan (yapılacak) / ❓ Belirsiz (kullanıcı onayı bekliyor)
 

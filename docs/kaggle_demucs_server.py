@@ -4,8 +4,10 @@ import os, re, shutil, subprocess, time, threading
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Body
 from fastapi.responses import FileResponse, JSONResponse
+import numpy as np
+import soundfile as sf
 import uvicorn, nest_asyncio
 
 app = FastAPI()
@@ -100,6 +102,63 @@ def job_status(job_id: str):
             "message": "unknown job assumed done",
         }
     return job
+
+
+@app.post("/api/mix")
+def mix_stems(payload: dict = Body(...)):
+    """
+    Karma mix üretir: seçilen stem WAV'larını sample-level toplar, normalize
+    eder ve istenen formatta (mp3/wav) tek bir dosya olarak döner.
+
+    Body: {"job_id": "job-<publicId>", "stems": ["vocals","drums"], "fmt": "mp3"|"wav"}
+
+    Java tarafı (MixService) çağırır, dönen dosyayı diske kaydeder.
+    """
+    job_id = payload.get("job_id")
+    stems = payload.get("stems") or []
+    fmt = (payload.get("fmt") or "mp3").lower()
+
+    if fmt not in ("mp3", "wav"):
+        return JSONResponse({"error": "fmt must be mp3 or wav"}, status_code=400)
+    if not stems or len(stems) < 2:
+        return JSONResponse({"error": "at least 2 stems required"}, status_code=400)
+    if any(s not in STEMS for s in stems):
+        return JSONResponse({"error": "invalid stem name"}, status_code=400)
+
+    job = JOBS.get(job_id, {})
+    base = job.get("base", job_id)
+    stems_dir = f"/kaggle/working/output/htdemucs/{base}"
+
+    # Stem WAV'larını yükle (hepsi aynı sample rate + uzunluk — Demucs garantisi).
+    arrays = []
+    sr = None
+    for stem in stems:
+        path = f"{stems_dir}/{stem}.wav"
+        if not os.path.exists(path):
+            return JSONResponse({"error": f"stem not found: {stem}"}, status_code=404)
+        data, this_sr = sf.read(path, dtype="float32")
+        sr = this_sr if sr is None else sr
+        arrays.append(data)
+
+    # Sample-level topla, peak'e göre normalize et (clipping engelle).
+    mixed = np.sum(arrays, axis=0)
+    peak = float(np.max(np.abs(mixed))) if mixed.size else 0.0
+    if peak > 1.0:
+        mixed = mixed / peak
+
+    # Çıktıyı tmp WAV'a yaz, gerekirse ffmpeg ile mp3'e çevir.
+    out_dir = f"/kaggle/working/output/htdemucs/{base}/mixes"
+    os.makedirs(out_dir, exist_ok=True)
+    mix_id = f"{'+'.join(stems)}-{int(time.time())}"
+    wav_out = f"{out_dir}/{mix_id}.wav"
+    sf.write(wav_out, mixed, sr, subtype="PCM_16")
+
+    if fmt == "wav":
+        return FileResponse(wav_out, media_type="audio/wav", filename=f"{mix_id}.wav")
+
+    mp3_out = f"{out_dir}/{mix_id}.mp3"
+    convert_to_mp3(wav_out, mp3_out)
+    return FileResponse(mp3_out, media_type="audio/mpeg", filename=f"{mix_id}.mp3")
 
 
 @app.get("/api/stem/{job_id}/{stem_type}")

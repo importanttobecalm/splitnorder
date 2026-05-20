@@ -10,7 +10,14 @@ updated: 2026-05-08
 Müzik kaynak ayrımı (Demucs) — Java Spring backend + Python Flask audio servisi + JSP frontend.
 Düzce Üniv. MF BM, Doç. Dr. Talha KABAKUŞ.
 
-### Mevcut Durum (2026-05-08)
+### Mevcut Durum (2026-05-20)
+- **Aktif dal:** `feature/studio-redesign`
+- **Build:** `mvn test` → **93/93 PASS** (Java 21)
+- **Yeni özellikler:** 5 GB kota + manuel silme (Faz 1) + karma stem mix Kaggle Flask üzerinden (Faz 2). ADR-13. result.jsp'de mix paneli aktif. NotebookLM `bm470` ile slayt-uyumu doğrulandı (SUM, cascade, @Transactional).
+- **Kaggle deploy:** `docs/kaggle_demucs_server.py`'a `/api/mix` route eklendi — Yusuf'un Kaggle notebook'una yeni versiyonu push etmesi gerekiyor (numpy + soundfile pip install).
+- **DB:** `mixed_tracks` tablosu `hbm2ddl.auto=update` ile otomatik oluşur; mevcut `jobs` tablosuna `original_file_size BIGINT` kolonu otomatik eklenir.
+
+### Eski Durum (2026-05-08)
 - **Aktif dal:** `yusuf2` — `origin/main` merge edildi, lokalde 8 commit ileride (push edilmedi)
 - **GitHub:** https://github.com/importanttobecalm/splitnorder/tree/yusuf2
 - **Build:** `mvn test -Dtest='!OracleMySQLConnectionTest'` → **20/20 PASS**
