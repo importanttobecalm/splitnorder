@@ -213,7 +213,10 @@ function AudioEngine(props) {
   const audioApi = {
     playing, time, duration, master, stems,
     onSeek, onStemToggle, onStemVolume, onStemPlay, onMasterPlay,
-    onMasterVolume: setMaster
+    onMasterVolume: setMaster,
+    // Mix modu için backend bağlantı bilgisi — AppScreen bunları görürse
+    // header'da "Mix Modu" butonunu render eder (mock'ta gizli kalır).
+    ctx, jobId
   };
 
   // Audio src: blob URL hazırsa onu kullan (RAM, 0ms latency); değilse

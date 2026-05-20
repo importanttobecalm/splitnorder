@@ -186,27 +186,38 @@ function Waveform({
 }
 
 // ─── stem card ───────────────────────────────────────────────────────────────
-function StemCard({ stem, onToggle, onVolume, onPlay, onSeek, progress, masterPlaying, style }) {
+function StemCard({ stem, onToggle, onVolume, onPlay, onSeek, progress, masterPlaying, style, mixMode, mixSelected, onMixToggle }) {
   const isAudible = !stem.muted && (masterPlaying || stem.playing);
   return (
     <div
-      className={"stem" + (stem.muted ? " muted" : "") + (stem.playing ? " soloed" : "")}
+      className={"stem" + (stem.muted ? " muted" : "") + (stem.playing ? " soloed" : "") + (mixMode ? " mix-mode" : "") + (mixMode && mixSelected ? " mix-selected" : "")}
       style={{ ...style, "--accent": stem.color }}
-      data-screen-label={`stem ${stem.name}`}>
-      
+      data-screen-label={`stem ${stem.name}`}
+      onClick={mixMode ? (e) => { if (e.target.tagName !== "INPUT") onMixToggle(stem.id); } : undefined}>
+
       <div className="stem-head">
         <div className="stem-icon" style={{ background: stem.color }}>
           {stem.icon}
         </div>
         <div className="stem-name">{stem.name}</div>
-        <button
-          className={"stem-play" + (stem.playing ? " on" : "")}
-          style={stem.playing ? { background: stem.color, color: "#fff", borderColor: stem.color } : {}}
-          onClick={() => onPlay(stem.id)}
-          title={stem.playing ? "Pause this stem" : "Play this stem only"}>
-          
-          {stem.playing ? I.pause() : I.play()}
-        </button>
+        {mixMode ? (
+          <label className="stem-mix-check" title="Bu stem'i mix'e ekle" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={!!mixSelected}
+              onChange={() => onMixToggle(stem.id)}
+              style={{ accentColor: stem.color }} />
+          </label>
+        ) : (
+          <button
+            className={"stem-play" + (stem.playing ? " on" : "")}
+            style={stem.playing ? { background: stem.color, color: "#fff", borderColor: stem.color } : {}}
+            onClick={() => onPlay(stem.id)}
+            title={stem.playing ? "Pause this stem" : "Play this stem only"}>
+
+            {stem.playing ? I.pause() : I.play()}
+          </button>
+        )}
       </div>
       <div className="stem-wave">
         <Waveform
@@ -403,6 +414,71 @@ function AppScreen({ tweaks = {}, audio }) {
   };
   const center = { x: 0.5, y: 0.5 };
 
+  // ─── Mix Modu state ─────────────────────────────────────────────────────
+  // Sadece audio (gerçek job) modunda anlamlı; mock'ta ctx/jobId yok → buton gizli.
+  const mixCtx    = audio && audio.ctx ? audio.ctx : null;
+  const mixJobId  = audio && audio.jobId ? audio.jobId : null;
+  const mixEnabled = !!(mixCtx && mixJobId);
+  const [mixMode, setMixMode]         = useState(false);
+  const [mixSelected, setMixSelected] = useState(() => new Set());
+  const [mixFmt, setMixFmt]           = useState("mp3");
+  const [mixBusy, setMixBusy]         = useState(false);
+  const [mixError, setMixError]       = useState(null);
+  const [mixNotice, setMixNotice]     = useState(null);
+
+  const onMixToggleSelect = (id) => {
+    setMixSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+    setMixError(null);
+  };
+
+  const toggleMixMode = () => {
+    setMixMode((m) => {
+      const nm = !m;
+      if (!nm) { setMixSelected(new Set()); setMixError(null); setMixNotice(null); }
+      return nm;
+    });
+  };
+
+  const runMixAndDownload = async () => {
+    if (mixSelected.size < 2) {
+      setMixError("En az 2 stem seç");
+      return;
+    }
+    setMixBusy(true);
+    setMixError(null);
+    setMixNotice(null);
+    try {
+      const body = new URLSearchParams();
+      body.set("stems", Array.from(mixSelected).join(","));
+      body.set("fmt", mixFmt);
+      const res = await fetch(mixCtx + "/job/" + mixJobId + "/mix", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString()
+      });
+      const data = await res.json();
+      if (data.error) { setMixError(data.error); return; }
+      // İndirme tetikle — yeni sekme yerine aynı sekmede attachment.
+      const a = document.createElement("a");
+      a.href = mixCtx + data.downloadUrl;
+      a.download = "";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setMixNotice("Mix hazır, indirme başladı.");
+    } catch (err) {
+      console.error("Mix hatası:", err);
+      setMixError("Mix oluşturulamadı");
+    } finally {
+      setMixBusy(false);
+    }
+  };
+
   // size-aware connector drawing
   const canvasRef = useRef(null);
   const [size, setSize] = useState({ w: 1200, h: 700 });
@@ -428,6 +504,45 @@ function AppScreen({ tweaks = {}, audio }) {
       <div className="app-header">
         <div className="app-logo"></div>
         <div className="app-title">Splitnorder</div>
+
+        {mixEnabled && mixMode && (
+          <div className="mix-actionbar">
+            <span className="mix-count">{mixSelected.size} seçili</span>
+            <div className="mix-fmt-group">
+              <button
+                type="button"
+                className={"mix-fmt-btn" + (mixFmt === "mp3" ? " on" : "")}
+                onClick={() => setMixFmt("mp3")}>MP3</button>
+              <button
+                type="button"
+                className={"mix-fmt-btn" + (mixFmt === "wav" ? " on" : "")}
+                onClick={() => setMixFmt("wav")}>WAV</button>
+            </div>
+            <button
+              className="btn mix-go-btn"
+              disabled={mixBusy || mixSelected.size < 2}
+              onClick={runMixAndDownload}
+              title="Seçili stem'leri birleştir ve indir">
+              {I.download()} {mixBusy ? "Hazırlanıyor…" : "Mixle ve İndir"}
+            </button>
+          </div>
+        )}
+
+        {mixEnabled && (
+          <button
+            className={"btn" + (mixMode ? " mix-toggle-on" : "")}
+            onClick={toggleMixMode}
+            title={mixMode ? "Mix modundan çık" : "Mix modunu aç"}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M4 7h10M4 12h6M4 17h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="17" cy="7" r="2.2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="13" cy="12" r="2.2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="20" cy="17" r="2.2" stroke="currentColor" strokeWidth="2" />
+            </svg>
+            {mixMode ? "Çık" : "Mix Modu"}
+          </button>
+        )}
+
         <button className="btn">
           {I.download()} Download All (ZIP)
         </button>
@@ -435,6 +550,12 @@ function AppScreen({ tweaks = {}, audio }) {
           {I.share()}
         </button>
       </div>
+
+      {mixMode && (mixError || mixNotice) && (
+        <div className={"mix-toast" + (mixError ? " err" : " ok")}>
+          {mixError || mixNotice}
+        </div>
+      )}
 
       <div className="canvas" ref={canvasRef}>
         {/* faint logo watermark */}
@@ -471,7 +592,10 @@ function AppScreen({ tweaks = {}, audio }) {
           onPlay={onStemPlay}
           onSeek={onSeek}
           masterPlaying={playing}
-          progress={progress} />
+          progress={progress}
+          mixMode={mixMode}
+          mixSelected={mixSelected.has(s.id)}
+          onMixToggle={onMixToggleSelect} />
 
         )}
 
