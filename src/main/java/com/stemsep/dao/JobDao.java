@@ -10,6 +10,7 @@ import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -78,6 +79,16 @@ public class JobDao {
 
     public void delete(Job job) {
         getCurrentSession().remove(job);
+    }
+
+    /** {@code createdAt < cutoff} olan tüm job'ları döner — retention job için. */
+    public List<Job> findOlderThan(LocalDateTime cutoff) {
+        Session session = getCurrentSession();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<Job> cq = cb.createQuery(Job.class);
+        Root<Job> root = cq.from(Job.class);
+        cq.select(root).where(cb.lessThan(root.get("createdAt"), cutoff));
+        return session.createQuery(cq).getResultList();
     }
 
     public Long sumOriginalFileSizeByUserId(Long userId) {

@@ -53,6 +53,13 @@
         </div>
       </div>
     </c:if>
+    <div class="mt-3 flex items-start gap-2 p-3 bg-secondary-container/40 rounded-lg">
+      <span class="material-symbols-outlined text-secondary text-[20px]">schedule</span>
+      <div>
+        <p class="font-body-sm text-body-sm font-bold text-on-surface"><fmt:message key="retention.notice.title" /></p>
+        <p class="font-body-sm text-body-sm text-on-surface-variant"><fmt:message key="retention.notice.message" /></p>
+      </div>
+    </div>
   </div>
 
   <%-- Flash mesajları (silme sonrası) --%>
