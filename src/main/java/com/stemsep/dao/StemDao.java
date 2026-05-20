@@ -44,6 +44,17 @@ public class StemDao {
         return query.getResultList();
     }
 
+    public Long sumFileSizeByUserId(Long userId) {
+        Session session = getCurrentSession();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+        Root<Stem> root = cq.from(Stem.class);
+        cq.select(cb.sum(root.get("fileSize")))
+          .where(cb.equal(root.get("job").get("user").get("id"), userId));
+        Long result = session.createQuery(cq).uniqueResult();
+        return result != null ? result : 0L;
+    }
+
     public Stem findByJobIdAndType(Long jobId, String stemType) {
         Session session = getCurrentSession();
         CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();

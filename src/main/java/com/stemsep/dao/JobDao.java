@@ -79,4 +79,15 @@ public class JobDao {
     public void delete(Job job) {
         getCurrentSession().remove(job);
     }
+
+    public Long sumOriginalFileSizeByUserId(Long userId) {
+        Session session = getCurrentSession();
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<Long> cq = cb.createQuery(Long.class);
+        Root<Job> root = cq.from(Job.class);
+        cq.select(cb.sum(root.get("originalFileSize")))
+          .where(cb.equal(root.get("user").get("id"), userId));
+        Long result = session.createQuery(cq).uniqueResult();
+        return result != null ? result : 0L;
+    }
 }

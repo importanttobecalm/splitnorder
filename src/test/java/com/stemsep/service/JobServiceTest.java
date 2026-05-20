@@ -1,13 +1,22 @@
 package com.stemsep.service;
 
 import com.stemsep.dao.JobDao;
+import com.stemsep.exception.JobNotFoundException;
+import com.stemsep.exception.UnauthorizedJobAccessException;
 import com.stemsep.model.Job;
 import com.stemsep.model.JobStatus;
+import com.stemsep.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -152,5 +161,103 @@ public class JobServiceTest {
     public void testGetJobByPublicIdReturnsNullWhenNotExists() {
         when(jobDao.findByPublicId("ghost")).thenReturn(null);
         assertNull(jobService.getJobByPublicId("ghost"));
+    }
+
+    // ===================== deleteJob =====================
+
+    /**
+     * {@code deleteJob} happy path: yetki kontrolü geçer, stem klasörü ve
+     * orijinal dosya diskten silinir, DAO {@code delete} çağrılır.
+     */
+    @Test
+    public void deleteJob_removesFilesAndDb(@TempDir Path tmp) throws Exception {
+        Path stemsRoot = tmp.resolve("stems");
+        Path uploadsRoot = tmp.resolve("uploads");
+        Files.createDirectories(stemsRoot);
+        Files.createDirectories(uploadsRoot);
+
+        String publicId = "pub-1";
+        Path stemDir = stemsRoot.resolve(publicId);
+        Files.createDirectories(stemDir);
+        Path stemFile = stemDir.resolve("vocals.mp3");
+        Files.writeString(stemFile, "stem-bytes");
+        Path original = uploadsRoot.resolve("song.mp3");
+        Files.writeString(original, "audio-bytes");
+
+        setField(jobService, "stemsDirectory", stemsRoot.toString());
+
+        User owner = new User();
+        owner.setId(7L);
+        Job job = new Job();
+        job.setId(1L);
+        job.setPublicId(publicId);
+        job.setUser(owner);
+        job.setOriginalFilePath(original.toString());
+
+        when(jobDao.findByPublicId(publicId)).thenReturn(job);
+
+        jobService.deleteJob(publicId, 7L);
+
+        assertFalse(Files.exists(stemFile), "stem dosyası silinmedi");
+        assertFalse(Files.exists(stemDir), "stem klasörü silinmedi");
+        assertFalse(Files.exists(original), "orijinal dosya silinmedi");
+        verify(jobDao).delete(job);
+    }
+
+    /** Job hiç yoksa {@link JobNotFoundException} fırlatılmalı. */
+    @Test
+    public void deleteJob_throwsWhenJobNotFound() {
+        when(jobDao.findByPublicId("missing")).thenReturn(null);
+        assertThrows(JobNotFoundException.class,
+                () -> jobService.deleteJob("missing", 1L));
+    }
+
+    /**
+     * Başka kullanıcının job'unu silmeye çalışmak
+     * {@link UnauthorizedJobAccessException} fırlatmalı — yetki kontrolü
+     * Service katmanında (slayt-uyumlu güvenlik).
+     */
+    @Test
+    public void deleteJob_throwsWhenUserNotOwner() {
+        User owner = new User();
+        owner.setId(10L);
+        Job job = new Job();
+        job.setPublicId("pub-x");
+        job.setUser(owner);
+        when(jobDao.findByPublicId("pub-x")).thenReturn(job);
+
+        assertThrows(UnauthorizedJobAccessException.class,
+                () -> jobService.deleteJob("pub-x", 99L));
+        verify(jobDao, never()).delete(any());
+    }
+
+    /**
+     * Stem klasörü diskte yoksa exception fırlatılmamalı — sessiz devam edip
+     * DB kaydını yine silmeli (idempotent delete; yarım silinmiş job'lar için).
+     */
+    @Test
+    public void deleteJob_succeedsWhenStemDirMissing(@TempDir Path tmp) throws IOException {
+        setField(jobService, "stemsDirectory", tmp.toString());
+
+        User owner = new User();
+        owner.setId(5L);
+        Job job = new Job();
+        job.setPublicId("pub-noexist");
+        job.setUser(owner);
+        // originalFilePath null — sadece DB kaydı silinmeli
+        when(jobDao.findByPublicId("pub-noexist")).thenReturn(job);
+
+        jobService.deleteJob("pub-noexist", 5L);
+        verify(jobDao).delete(job);
+    }
+
+    private static void setField(Object target, String name, Object value) {
+        try {
+            Field f = target.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            f.set(target, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

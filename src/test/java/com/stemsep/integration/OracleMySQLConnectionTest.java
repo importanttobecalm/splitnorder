@@ -5,7 +5,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p><b>Slayt referansı:</b> JUnit 5 + Spring entegrasyonu (BM470 Servlet & JSP
  * ders sunumları, "Birim Testleri" bölümü).</p>
  */
-@Disabled("Bastion SSH tunnel + canlı Oracle Cloud MySQL gerektiriyor")
 public class OracleMySQLConnectionTest {
 
     /**

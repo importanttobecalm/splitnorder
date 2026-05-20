@@ -3,6 +3,7 @@ package com.stemsep.controller;
 import com.stemsep.model.Job;
 import com.stemsep.model.User;
 import com.stemsep.service.JobService;
+import com.stemsep.service.StorageQuotaService;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,9 @@ public class UploadController {
 
     @Autowired
     private JobService jobService;
+
+    @Autowired
+    private StorageQuotaService storageQuotaService;
 
     /**
      * Eski {@code /upload} sayfası kaldırıldı — yükleme artık studio içinde
@@ -66,6 +70,11 @@ public class UploadController {
             User user = (User) session.getAttribute("user");
             if (user == null) {
                 return "redirect:/auth/login"; // AuthInterceptor sayesinde normalde düşmeyecek
+            }
+
+            if (storageQuotaService.wouldExceed(user.getId(), file.getSize())) {
+                redirectAttributes.addFlashAttribute("error", "storage.error.quotaExceeded");
+                return "redirect:/history";
             }
 
             Job job = jobService.createJob(user, file, model);
@@ -115,6 +124,12 @@ public class UploadController {
             String filename = file.getOriginalFilename();
             if (filename == null || !isValidAudioFile(filename)) {
                 response.put("error", "upload.error.invalidFormat");
+                return response;
+            }
+            if (storageQuotaService.wouldExceed(user.getId(), file.getSize())) {
+                response.put("error", "storage.error.quotaExceeded");
+                response.put("usedBytes", storageQuotaService.getUsedBytes(user.getId()));
+                response.put("quotaBytes", StorageQuotaService.QUOTA_BYTES);
                 return response;
             }
 

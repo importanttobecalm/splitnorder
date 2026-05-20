@@ -10,7 +10,63 @@
 
 <c:set var="view" value="${empty param.view ? 'grid' : param.view}" />
 
+<%-- Byte → "X.XX GB" / "X.X MB" insan okunabilir format (sadece JSTL) --%>
+<c:set var="usedMb" value="${storageUsedBytes / 1048576}" />
+<c:set var="quotaGb" value="${storageQuotaBytes / 1073741824}" />
+<c:set var="usedGb" value="${storageUsedBytes / 1073741824}" />
+
 <main class="max-w-[1240px] mx-auto px-margin_mobile md:px-margin_desktop pt-8 pb-24">
+
+  <%-- ===== Kota kartı + uyarılar ===== --%>
+  <div class="mb-6 bg-surface-container-lowest rounded-xl p-5 soft-shadow">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">database</span>
+        <h2 class="font-body-md text-body-md font-bold text-on-surface"><fmt:message key="storage.title" /></h2>
+      </div>
+      <div class="font-mono-label text-mono-label text-on-surface-variant">
+        <fmt:formatNumber value="${usedGb}" maxFractionDigits="2" minFractionDigits="2" /> GB
+        <span class="text-outline">/</span>
+        <fmt:formatNumber value="${quotaGb}" maxFractionDigits="0" /> GB
+        <span class="ml-2 ${storageFull ? 'text-error' : (storageWarn ? 'text-tertiary' : 'text-on-surface-variant')}">(${storagePercent}%)</span>
+      </div>
+    </div>
+    <div class="w-full bg-surface-container-low rounded-full h-2.5 overflow-hidden">
+      <div class="h-full transition-all ${storageFull ? 'bg-error' : (storageWarn ? 'bg-tertiary' : 'bg-primary')}"
+           style="width: ${storagePercent}%"></div>
+    </div>
+    <c:if test="${storageWarn}">
+      <div class="mt-3 flex items-start gap-2 p-3 bg-tertiary-container/40 rounded-lg">
+        <span class="material-symbols-outlined text-tertiary text-[20px]">warning</span>
+        <div>
+          <p class="font-body-sm text-body-sm font-bold text-on-surface"><fmt:message key="storage.warn.title" /></p>
+          <p class="font-body-sm text-body-sm text-on-surface-variant"><fmt:message key="storage.warn.message" /></p>
+        </div>
+      </div>
+    </c:if>
+    <c:if test="${storageFull}">
+      <div class="mt-3 flex items-start gap-2 p-3 bg-error-container/40 rounded-lg">
+        <span class="material-symbols-outlined text-error text-[20px]">block</span>
+        <div>
+          <p class="font-body-sm text-body-sm font-bold text-on-surface"><fmt:message key="storage.full.title" /></p>
+          <p class="font-body-sm text-body-sm text-on-surface-variant"><fmt:message key="storage.full.message" /></p>
+        </div>
+      </div>
+    </c:if>
+  </div>
+
+  <%-- Flash mesajları (silme sonrası) --%>
+  <c:if test="${not empty info}">
+    <div class="mb-4 p-3 bg-primary-fixed text-on-primary-fixed rounded-lg font-body-sm">
+      <fmt:message key="${info}" />
+    </div>
+  </c:if>
+  <c:if test="${not empty error}">
+    <div class="mb-4 p-3 bg-error-container text-on-error-container rounded-lg font-body-sm">
+      <fmt:message key="${error}" />
+    </div>
+  </c:if>
+
 
   <%-- Üst satır: başlık + view toggle + arama --%>
   <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -60,7 +116,17 @@
     <c:when test="${view == 'grid'}">
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter">
         <c:forEach var="job" items="${jobs}">
-          <a href="${ctx}/job/${job.publicId}" class="bg-surface-container-lowest rounded-xl overflow-hidden soft-shadow hover:shadow-lg transition-all group">
+          <div class="relative bg-surface-container-lowest rounded-xl overflow-hidden soft-shadow hover:shadow-lg transition-all group">
+          <%-- Sil butonu (kartın üst-sağ köşesi) --%>
+          <form method="post" action="${ctx}/history/job/${job.publicId}/delete"
+                class="absolute top-3 right-3 z-10"
+                onsubmit="return confirm('<fmt:message key="storage.delete.confirm" />');">
+            <button type="submit" title="<fmt:message key="storage.delete" />"
+                    class="w-8 h-8 rounded-full bg-surface-container-lowest/90 backdrop-blur-sm hover:bg-error hover:text-on-error transition-colors flex items-center justify-center text-on-surface-variant">
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
+          </form>
+          <a href="${ctx}/job/${job.publicId}" class="block">
             <div class="h-[160px] relative bg-gradient-to-br from-primary-fixed via-tertiary-fixed to-secondary-fixed">
               <div class="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
                 <c:choose>
@@ -101,6 +167,7 @@
               </div>
             </div>
           </a>
+          </div>
         </c:forEach>
       </div>
     </c:when>
@@ -115,6 +182,7 @@
               <th class="px-6 py-3"><fmt:message key="history.col.model" /></th>
               <th class="px-6 py-3"><fmt:message key="history.col.status" /></th>
               <th class="px-6 py-3"><fmt:message key="history.col.date" /></th>
+              <th class="px-6 py-3"><fmt:message key="storage.col.size" /></th>
               <th class="px-6 py-3"></th>
             </tr>
           </thead>
@@ -143,10 +211,31 @@
                 <td class="px-6 py-4 font-body-sm text-on-surface-variant">
                   ${fn:replace(fn:substring(job.createdAt, 0, 16), "T", " ")}
                 </td>
+                <td class="px-6 py-4 font-mono-label text-on-surface-variant">
+                  <c:choose>
+                    <c:when test="${empty job.originalFileSize}">—</c:when>
+                    <c:when test="${job.originalFileSize >= 1048576}">
+                      <fmt:formatNumber value="${job.originalFileSize / 1048576}" maxFractionDigits="1" /> MB
+                    </c:when>
+                    <c:otherwise>
+                      <fmt:formatNumber value="${job.originalFileSize / 1024}" maxFractionDigits="0" /> KB
+                    </c:otherwise>
+                  </c:choose>
+                </td>
                 <td class="px-6 py-4 text-right">
-                  <a href="${ctx}/job/${job.publicId}" class="text-primary hover:text-primary-container">
-                    <span class="material-symbols-outlined">arrow_forward</span>
-                  </a>
+                  <div class="flex items-center justify-end gap-2">
+                    <a href="${ctx}/job/${job.publicId}" class="text-primary hover:text-primary-container">
+                      <span class="material-symbols-outlined">arrow_forward</span>
+                    </a>
+                    <form method="post" action="${ctx}/history/job/${job.publicId}/delete"
+                          onsubmit="return confirm('<fmt:message key="storage.delete.confirm" />');"
+                          class="inline">
+                      <button type="submit" title="<fmt:message key="storage.delete" />"
+                              class="text-outline hover:text-error transition-colors">
+                        <span class="material-symbols-outlined">delete</span>
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             </c:forEach>

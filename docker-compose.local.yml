@@ -1,0 +1,24 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: splitnorder-mysql-local
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: stemsep_db
+      MYSQL_USER: stemsep
+      MYSQL_PASSWORD: xooY6CZitrNtM2R7vFYwZpPSqihq
+    volumes:
+      - splitnorder_mysql_local:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  splitnorder_mysql_local:
+    external: true
+    name: splitnorder_mysql_local

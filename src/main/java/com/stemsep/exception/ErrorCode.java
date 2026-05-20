@@ -59,6 +59,9 @@ public enum ErrorCode {
     UPLOAD_INVALID_FORMAT(HttpStatus.BAD_REQUEST, "upload.error.invalidFormat"),
     UPLOAD_GENERIC(HttpStatus.INTERNAL_SERVER_ERROR, "upload.error.generic"),
 
+    // ===== Storage / Kota =====
+    STORAGE_QUOTA_EXCEEDED(HttpStatus.INSUFFICIENT_STORAGE, "storage.error.quotaExceeded"),
+
     // ===== Generic / yakalanamayan =====
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "auth.error.INTERNAL_ERROR"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "error.404.title");

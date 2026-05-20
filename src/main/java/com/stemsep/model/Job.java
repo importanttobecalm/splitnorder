@@ -36,6 +36,9 @@ public class Job {
     @Column(name = "original_file_path")
     private String originalFilePath;
 
+    @Column(name = "original_file_size")
+    private Long originalFileSize;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private JobStatus status = JobStatus.PENDING;
