@@ -25,10 +25,16 @@
         <p class="font-mono-label text-mono-label text-on-surface-variant uppercase">${job.modelUsed} · ${fn:replace(fn:substring(job.createdAt, 0, 16), "T", " ")}</p>
       </div>
     </div>
-    <a href="${ctx}/job/${job.publicId}/download-all" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2 shadow-sm">
-      <span class="material-symbols-outlined">download</span>
-      <fmt:message key="studio.downloadAll" />
-    </a>
+    <div class="flex flex-wrap items-center gap-3">
+      <a href="#mixPanel" class="bg-tertiary text-on-tertiary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-tertiary-container hover:text-on-tertiary-container transition-colors inline-flex items-center gap-2 shadow-sm">
+        <span class="material-symbols-outlined">tune</span>
+        <fmt:message key="mix.build" />
+      </a>
+      <a href="${ctx}/job/${job.publicId}/download-all" class="bg-primary text-on-primary px-6 py-3 rounded-xl font-body-md font-medium hover:bg-primary-container transition-colors inline-flex items-center gap-2 shadow-sm">
+        <span class="material-symbols-outlined">download</span>
+        <fmt:message key="studio.downloadAll" />
+      </a>
+    </div>
   </div>
 
   <%-- 4 stem kart (grid layout — Stitch'in absolute konumuna karşılık) --%>
@@ -79,7 +85,7 @@
   </div>
 
   <%-- ===== Karma Mix Paneli ===== --%>
-  <div id="mixPanel" class="bg-surface-container-lowest rounded-xl soft-shadow p-6 mb-12">
+  <div id="mixPanel" style="scroll-margin-top: 90px;" class="bg-surface-container-lowest rounded-xl soft-shadow p-6 mb-12 ring-2 ring-tertiary/0 target:ring-tertiary/60">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
       <div>
         <h2 class="font-headline-sm text-[18px] text-on-surface mb-1 flex items-center gap-2">

@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,35 +53,78 @@ public class ColabInferenceService {
     @Autowired
     private StemDao stemDao;
 
+    /**
+     * Self-proxy referansı — {@link #processJob} içinden @Transactional
+     * helper'lara çağrı yaparken Spring AOP proxy'sinin devreye girmesi için
+     * gerekli. Aksi takdirde aynı bean içinden direkt {@code this.x()}
+     * çağrısı proxy'yi bypass eder ve transaction sınırı oluşmaz. @Lazy:
+     * {@link JobService} bu servisi inject ediyor → döngüsel bağımlılık
+     * önlemek için lazy resolve.
+     */
+    @Autowired
+    @Lazy
+    private ColabInferenceService self;
+
     @Value("${colab.api.url:http://localhost:5000}")
     private String colabApiUrl;
 
     @Value("${stems.directory:stems}")
     private String stemsDirectory;
 
-    @Transactional
+    /**
+     * Orkestratör — kasten {@code @Transactional} DEĞİL. Tek büyük bir
+     * transaction'a sarsaydık PROCESSING güncellemesi metod bitene kadar
+     * commit edilmez (Hibernate dirty checking sadece commit'te flush eder)
+     * ve UI polling 90+ saniye boyunca PENDING görür. Üç ayrı tx'e bölünür:
+     *   1) PROCESSING commit → UI hemen tepki verir
+     *   2) HTTP & FS işi (tx-dışı, dakikalarca sürebilir)
+     *   3) stems + COMPLETED atomic commit
+     */
     public void processJob(Long jobId) {
+        Job job = self.markProcessing(jobId);
+
+        try {
+            String remoteJobId = callSeparate(job);
+            downloadStems(job, remoteJobId);
+            self.recordStemsAndComplete(jobId, remoteJobId);
+            logger.info("Job {} tamamlandı (Kaggle job_id={})", jobId, remoteJobId);
+        } catch (IOException e) {
+            self.markFailed(jobId, e.getMessage());
+            throw new InferenceFailedException("Demucs çağrısı başarısız: " + e.getMessage());
+        }
+    }
+
+    /** Job'u yükle + PROCESSING'e geçir + hemen commit (UI bunu hemen görür). */
+    @Transactional
+    public Job markProcessing(Long jobId) {
         Job job = jobDao.findById(jobId);
         if (job == null) {
             throw new InferenceFailedException("Job bulunamadı: " + jobId);
         }
         job.setStatus(JobStatus.PROCESSING);
         jobDao.update(job);
+        // originalFilePath + publicId + modelUsed eager kolonlar — tx dışında erişilebilir.
+        return job;
+    }
 
-        try {
-            String remoteJobId = callSeparate(job);
-            downloadStems(job, remoteJobId);
-            createStemRecords(job);
-            job.setStatus(JobStatus.COMPLETED);
-            job.setCompletedAt(LocalDateTime.now());
-            jobDao.update(job);
-            logger.info("Job {} tamamlandı (Kaggle job_id={})", jobId, remoteJobId);
-        } catch (IOException e) {
-            job.setStatus(JobStatus.FAILED);
-            job.setErrorMessage(e.getMessage());
-            jobDao.update(job);
-            throw new InferenceFailedException("Demucs çağrısı başarısız: " + e.getMessage());
-        }
+    /** Stem kayıtlarını oluştur + COMPLETED set et — tek tx içinde atomik. */
+    @Transactional
+    public void recordStemsAndComplete(Long jobId, String remoteJobId) throws IOException {
+        Job job = jobDao.findById(jobId);
+        createStemRecords(job);
+        job.setStatus(JobStatus.COMPLETED);
+        job.setCompletedAt(LocalDateTime.now());
+        jobDao.update(job);
+    }
+
+    /** Hata durumunda FAILED'a geçir — kendi transaction'ında. */
+    @Transactional
+    public void markFailed(Long jobId, String errorMessage) {
+        Job job = jobDao.findById(jobId);
+        if (job == null) return;
+        job.setStatus(JobStatus.FAILED);
+        job.setErrorMessage(errorMessage);
+        jobDao.update(job);
     }
 
     /**
@@ -135,38 +179,68 @@ public class ColabInferenceService {
     }
 
     /**
-     * Her stem için iki format indirir:
-     *   GET /api/stem/{job_id}/{stem}?fmt=mp3  → stems/&lt;jobId&gt;/{stem}.mp3
-     *   GET /api/stem/{job_id}/{stem}?fmt=wav  → stems/&lt;jobId&gt;/{stem}.wav
-     *
-     * MP3 arayüz streaming için (hızlı, ~4 MB), WAV indirme için (kayıpsız,
-     * ~40 MB). Java'da Stem.filePath MP3'ü işaret eder; WAV path'i convention
-     * ile türetilir (uzantı .mp3 → .wav).
+     * Sadece MP3'leri indirir (4 × ~4 MB ≈ 16 MB). WAV (4 × ~32 MB ≈ 128 MB)
+     * processing süresini ~3×'e çıkarıyordu; kullanıcı UI'da WAV'a nadiren
+     * iniyor, gerektiğinde {@link #ensureWavAvailable} ile lazy fetch ediyoruz.
      */
     private void downloadStems(Job job, String remoteJobId) throws IOException {
         Path stemsDir = Paths.get(stemsDirectory, job.getPublicId()).toAbsolutePath();
         Files.createDirectories(stemsDir);
 
         for (String stemType : STEMS) {
-            for (String fmt : new String[]{"mp3", "wav"}) {
-                URL url = new URL(colabApiUrl + "/api/stem/" + remoteJobId + "/" + stemType + "?fmt=" + fmt);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("ngrok-skip-browser-warning", "true");
-                conn.setConnectTimeout(15000);
-                conn.setReadTimeout(180000); // WAV ~40 MB → bol pay
-
-                int code = conn.getResponseCode();
-                if (code != 200) {
-                    throw new IOException("Stem indirilemedi (" + stemType + "." + fmt + "): HTTP " + code);
-                }
-                Path target = stemsDir.resolve(stemType + "." + fmt);
-                try (InputStream in = conn.getInputStream()) {
-                    Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-                logger.info("Stem indirildi: {} ({} bytes)", target, target.toFile().length());
-            }
+            downloadOne(remoteJobId, stemsDir, stemType, "mp3");
         }
+    }
+
+    /**
+     * WAV master'ı talep anında Kaggle'dan çeker. Dosya zaten varsa no-op.
+     * Kaggle session ölmüşse {@link IOException} fırlatır — caller 503/410
+     * dönmeli. Stem türü geçersizse {@link IllegalArgumentException}.
+     */
+    public void ensureWavAvailable(Long jobId, String stemType) throws IOException {
+        if (!isValidStem(stemType)) {
+            throw new IllegalArgumentException("Bilinmeyen stem: " + stemType);
+        }
+        Job job = jobDao.findById(jobId);
+        if (job == null) {
+            throw new IOException("Job bulunamadı: " + jobId);
+        }
+        Path stemsDir = Paths.get(stemsDirectory, job.getPublicId()).toAbsolutePath();
+        Path wav = stemsDir.resolve(stemType + ".wav");
+        if (Files.exists(wav)) return;
+        Files.createDirectories(stemsDir);
+        downloadOne("job-" + job.getPublicId(), stemsDir, stemType, "wav");
+    }
+
+    /** Tüm 4 stem'in WAV'ını lazy fetch (download-all?format=wav için). */
+    public void ensureAllWavsAvailable(Long jobId) throws IOException {
+        for (String stemType : STEMS) {
+            ensureWavAvailable(jobId, stemType);
+        }
+    }
+
+    private boolean isValidStem(String stemType) {
+        for (String s : STEMS) if (s.equals(stemType)) return true;
+        return false;
+    }
+
+    private void downloadOne(String remoteJobId, Path stemsDir, String stemType, String fmt) throws IOException {
+        URL url = new URL(colabApiUrl + "/api/stem/" + remoteJobId + "/" + stemType + "?fmt=" + fmt);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("ngrok-skip-browser-warning", "true");
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(180000);
+
+        int code = conn.getResponseCode();
+        if (code != 200) {
+            throw new IOException("Stem indirilemedi (" + stemType + "." + fmt + "): HTTP " + code);
+        }
+        Path target = stemsDir.resolve(stemType + "." + fmt);
+        try (InputStream in = conn.getInputStream()) {
+            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        logger.info("Stem indirildi: {} ({} bytes)", target, target.toFile().length());
     }
 
     private void createStemRecords(Job job) throws IOException {

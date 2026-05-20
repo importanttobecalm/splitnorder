@@ -3,6 +3,7 @@ package com.stemsep.controller;
 import com.stemsep.model.Job;
 import com.stemsep.model.User;
 import com.stemsep.model.Stem;
+import com.stemsep.service.ColabInferenceService;
 import com.stemsep.service.JobService;
 import com.stemsep.service.StemService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,6 +32,9 @@ public class JobController {
 
     @Autowired
     private StemService stemService;
+
+    @Autowired
+    private ColabInferenceService colabService;
 
     @GetMapping({"/{publicId}", "/{publicId}/result"})
     public String showJob(@PathVariable String publicId, HttpSession session, Model model) {
@@ -101,11 +105,16 @@ public class JobController {
             if ("wav".equalsIgnoreCase(fmt)) {
                 String alt = basePath.replaceAll("\\.(mp3|wav|flac)$", ".wav");
                 File altFile = new File(alt);
-                if (altFile.exists()) {
-                    file = altFile;
-                } else {
-                    file = new File(basePath); // WAV yoksa default'a düş
+                if (!altFile.exists()) {
+                    // Lazy WAV: processing aşamasında sadece MP3 indirildi;
+                    // ilk WAV talebinde Kaggle'dan çekiyoruz.
+                    try {
+                        colabService.ensureWavAvailable(job.getId(), stemType);
+                    } catch (IOException e) {
+                        logger.warn("Lazy WAV fetch başarısız ({}): {}", stemType, e.getMessage());
+                    }
                 }
+                file = altFile.exists() ? altFile : new File(basePath);
             } else if ("mp3".equalsIgnoreCase(fmt)) {
                 String alt = basePath.replaceAll("\\.(mp3|wav|flac)$", ".mp3");
                 File altFile = new File(alt);
@@ -204,6 +213,14 @@ public class JobController {
 
         // Default mp3 — küçük ZIP, hızlı. format=wav ile kayıpsız master.
         final String fmt = "wav".equalsIgnoreCase(format) ? "wav" : "mp3";
+
+        if ("wav".equals(fmt)) {
+            try {
+                colabService.ensureAllWavsAvailable(job.getId());
+            } catch (IOException e) {
+                logger.warn("Lazy WAV fetch (download-all) başarısız: {}", e.getMessage());
+            }
+        }
 
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition",

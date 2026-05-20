@@ -51,6 +51,10 @@ public class ColabInferenceServiceTest {
         // bağlantı reddi alırız ve exception fırlatılır — beklenen davranış budur.
         ReflectionTestUtils.setField(colabService, "colabApiUrl", "http://127.0.0.1:1");
         ReflectionTestUtils.setField(colabService, "stemsDirectory", "test-stems");
+        // Self-reference normalde @Lazy Spring proxy ile gelir; testte aynı
+        // instance'a bağlıyoruz ki @Transactional helper'lara yapılan
+        // self.X() çağrıları gerçek metoda gitsin (tx semantiği test edilmiyor).
+        ReflectionTestUtils.setField(colabService, "self", colabService);
     }
 
     /**
