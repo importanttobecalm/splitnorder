@@ -504,45 +504,6 @@ function AppScreen({ tweaks = {}, audio }) {
       <div className="app-header">
         <div className="app-logo"></div>
         <div className="app-title">Splitnorder</div>
-
-        {mixEnabled && mixMode && (
-          <div className="mix-actionbar">
-            <span className="mix-count">{mixSelected.size} seçili</span>
-            <div className="mix-fmt-group">
-              <button
-                type="button"
-                className={"mix-fmt-btn" + (mixFmt === "mp3" ? " on" : "")}
-                onClick={() => setMixFmt("mp3")}>MP3</button>
-              <button
-                type="button"
-                className={"mix-fmt-btn" + (mixFmt === "wav" ? " on" : "")}
-                onClick={() => setMixFmt("wav")}>WAV</button>
-            </div>
-            <button
-              className="btn mix-go-btn"
-              disabled={mixBusy || mixSelected.size < 2}
-              onClick={runMixAndDownload}
-              title="Seçili stem'leri birleştir ve indir">
-              {I.download()} {mixBusy ? "Hazırlanıyor…" : "Mixle ve İndir"}
-            </button>
-          </div>
-        )}
-
-        {mixEnabled && (
-          <button
-            className={"btn" + (mixMode ? " mix-toggle-on" : "")}
-            onClick={toggleMixMode}
-            title={mixMode ? "Mix modundan çık" : "Mix modunu aç"}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-              <path d="M4 7h10M4 12h6M4 17h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <circle cx="17" cy="7" r="2.2" stroke="currentColor" strokeWidth="2" />
-              <circle cx="13" cy="12" r="2.2" stroke="currentColor" strokeWidth="2" />
-              <circle cx="20" cy="17" r="2.2" stroke="currentColor" strokeWidth="2" />
-            </svg>
-            {mixMode ? "Çık" : "Mix Modu"}
-          </button>
-        )}
-
         <button className="btn">
           {I.download()} Download All (ZIP)
         </button>
@@ -551,9 +512,53 @@ function AppScreen({ tweaks = {}, audio }) {
         </button>
       </div>
 
-      {mixMode && (mixError || mixNotice) && (
-        <div className={"mix-toast" + (mixError ? " err" : " ok")}>
-          {mixError || mixNotice}
+      {/* Mix Modu floating panel — .app-header JSP'de gizli olduğu için ayrı overlay.
+          Audio yüklendiğinde canvas'ın üstünde sağ-üstte sabit durur. */}
+      {mixEnabled && (
+        <div className={"mix-fab" + (mixMode ? " open" : "")}>
+          <button
+            className={"mix-fab-toggle" + (mixMode ? " on" : "")}
+            onClick={toggleMixMode}
+            title={mixMode ? "Mix modundan çık" : "Mix modunu aç"}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M4 7h10M4 12h6M4 17h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="17" cy="7" r="2.2" stroke="currentColor" strokeWidth="2" fill={mixMode ? "currentColor" : "none"} />
+              <circle cx="13" cy="12" r="2.2" stroke="currentColor" strokeWidth="2" fill={mixMode ? "currentColor" : "none"} />
+              <circle cx="20" cy="17" r="2.2" stroke="currentColor" strokeWidth="2" fill={mixMode ? "currentColor" : "none"} />
+            </svg>
+            <span>{mixMode ? "Mix Modu Açık" : "Mix Modu"}</span>
+          </button>
+
+          {mixMode && (
+            <div className="mix-fab-body">
+              <div className="mix-fab-hint">
+                {mixSelected.size === 0 && "Birleştirmek istediğin stem'leri seç (≥2)"}
+                {mixSelected.size === 1 && "En az 1 stem daha seç"}
+                {mixSelected.size >= 2 && `${mixSelected.size} stem seçildi — birleştirmeye hazır`}
+              </div>
+              <div className="mix-fab-row">
+                <div className="mix-fmt-group">
+                  <button type="button"
+                    className={"mix-fmt-btn" + (mixFmt === "mp3" ? " on" : "")}
+                    onClick={() => setMixFmt("mp3")}>MP3</button>
+                  <button type="button"
+                    className={"mix-fmt-btn" + (mixFmt === "wav" ? " on" : "")}
+                    onClick={() => setMixFmt("wav")}>WAV</button>
+                </div>
+                <button
+                  className="btn mix-go-btn"
+                  disabled={mixBusy || mixSelected.size < 2}
+                  onClick={runMixAndDownload}>
+                  {I.download()} {mixBusy ? "Hazırlanıyor…" : "Mixle ve İndir"}
+                </button>
+              </div>
+              {(mixError || mixNotice) && (
+                <div className={"mix-fab-msg" + (mixError ? " err" : " ok")}>
+                  {mixError || mixNotice}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
